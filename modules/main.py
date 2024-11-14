@@ -23,6 +23,6 @@ csv_filename = "../HelicoDataSet/PatientDiagnosis.csv"
 if "__name__" == "__main__":
     data = HelicoDataset(csv_filename, ROOT_DIR)
     batch_size = 16
-    
+    optimizer = torch.optim.Adam(autoencoder.parameters(), lr=0.001)
     dataloader = create_dataloaders(data, batch_size)
     
