@@ -13,7 +13,7 @@ def MSE_loss(inputs, outputs):
     loss = mean(batch_losses)
     return loss
 
-input = torch.randn(5, 5, 3)
-output = torch.randn(5, 5, 3)
-loss = MSE_loss([input], [output])
-print(loss)
+# input = torch.randn(5, 5, 3)
+# output = torch.randn(5, 5, 3)
+# loss = MSE_loss([input], [output])
+# print(loss)
