@@ -46,7 +46,6 @@ def train_epoch(model, batch_size, loss_func, device, loader, optimizer, loss_lo
         batch_acc = 0.0
         
         for batch_idx, inputs in enumerate(loader[phase]):
-            print(type(inputs), inputs.shape)
 
             inputs = inputs.to(device)
             

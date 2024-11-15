@@ -4,6 +4,7 @@ from statistics import mean
 def MSE_loss(inputs, outputs):
     batch_losses = []
     for input, output in zip(inputs, outputs):
+        print(input.shape, output.shape)
         diff = (input - output)**2
         summed_pixel = diff.sum(dim=2, keepdim=True)
         eucl_dist = torch.sqrt(summed_pixel)

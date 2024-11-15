@@ -61,19 +61,27 @@ def AEConfigs(Config):
         net_paramsDec['stride']=net_paramsEnc['stride']
         inputmodule_paramsDec['num_input_channels']=net_paramsEnc['block_configs'][-1][-1]
     
-    return net_paramsEnc,net_paramsDec,inputmodule_paramsDec
+    return net_paramsEnc,net_paramsDec,inputmodule_paramsDec, inputmodule_paramsEnc
 
 
 def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print(device)
+    Config='1'
+    net_paramsEnc,net_paramsDec,inputmodule_paramsDec, inputmodule_paramsEnc=AEConfigs(Config)
+    model=AutoEncoderCNN(inputmodule_paramsEnc, net_paramsEnc,
+                        inputmodule_paramsDec, net_paramsDec)
+    print(model)
+    model.to(device)
+
+
+    print("Reading Dataset...")
     data = HelicoDataset(csv_filename, ROOT_DIR, read_images=True)
     batch_size = 16
     dataloader = create_dataloaders(data, batch_size)
-    print(dataloader)
+    print("Dataset Readed")
     ######################### 0. EXPERIMENT PARAMETERS
     # 0.1 AE PARAMETERS
-    inputmodule_paramsEnc={}
-    inputmodule_paramsEnc['num_input_channels']=3
 
     # 0.1 NETWORK TRAINING PARAMS
 
@@ -108,17 +116,16 @@ def main():
 
 
     ###### CONFIG1
-    Config='1'
-    net_paramsEnc,net_paramsDec,inputmodule_paramsDec=AEConfigs(Config)
-    model=AutoEncoderCNN(inputmodule_paramsEnc, net_paramsEnc,
-                        inputmodule_paramsDec, net_paramsDec)
     
+
     # 4.2 Model Training
     loader = {}
     loader["train"] = dataloader
     loss_func = MSE_loss
     optimizer = optim.Adam(model.parameters(), lr=0.001)
     num_epochs = 10
+
+
     train_autoencoder(model, batch_size, loss_func, device, loader, optimizer, num_epochs)
 
 

@@ -1,6 +1,6 @@
 import os
 import pandas as pd
-from skimage import io
+from skimage import io, color
 import numpy as np
 from torch.utils.data import Dataset, DataLoader
 
@@ -17,6 +17,8 @@ def load_cropped_patients(cropped_dir, cropped_csv):
             for file_img in os.listdir(os.path.join(cropped_dir, patient_dir)):
                 if(file_img.endswith(".png")):
                     image = io.imread(os.path.join(cropped_dir, patient_dir, file_img))
+                    image = color.rgba2rgb(image)
+                    image = image.transpose(2, 0, 1)
                     imgs.append(image)
         
     return np.array(imgs)
