@@ -8,7 +8,7 @@ Created on Tue Nov 12 12:44:33 2024
 import os
 import torch
 import pandas as pd
-from skimage import io, transform
+#from skimage import io, transform
 import numpy as np
 import matplotlib.pyplot as plt
 from torch.utils.data import Dataset, DataLoader
@@ -35,15 +35,18 @@ class HelicoDataset(Dataset):
             self.__read_images()
     
     def __read_images(self):
-        self._images = load_cropped_patients(self.root_dir, self.csv)
+        self._images = load_cropped_patients(self._root_dir, self._csv)
         
+    def __len__(self):
+        return len(self._images)
+
     def __getitem__(self, idx):
         if torch.is_tensor(idx):
             idx = idx.tolist()
         sample = self._images[idx]
-        if(self.transform):
-            sample = self.transform(sample)
-            
-        return sample
+        if(self._transform):
+            sample = self._transform(sample)
+        sample = sample.astype(np.float32)
+        return torch.from_numpy(sample)
         
         

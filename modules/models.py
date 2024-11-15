@@ -9,6 +9,8 @@ from torch import Tensor
 from collections import OrderedDict
 from numpy.matlib import repmat
 
+from models_init import init_weights_xavier_normal
+
 
 ### Convolutional 
 class _CNNLayer(nn.Module):
@@ -136,17 +138,17 @@ class AutoEncoderCNN(nn.Module):
     `".
     """
 
-    def __init__(self, inputmodule_params,net_params):
+    def __init__(self, inputmodule_paramsEnc, net_paramsEnc, inputmodule_paramsDec, net_paramsDec):
         super().__init__()
         
-        num_input_channels=inputmodule_params['num_input_channels']
-        self.dim=net_params['dim']
+        num_input_channels=inputmodule_paramsEnc['num_input_channels']
+        self.dim=net_paramsEnc['dim']
         self.upPoolMode='bilinear'
         if self.dim==3:
             self.upPoolMode='trilinear'
             
-        drop_rate=net_params['drop_rate']
-        block_configs=net_params['block_configs']
+        drop_rate=net_paramsEnc['drop_rate']
+        block_configs=net_paramsEnc['block_configs']
         n_blocks=len(block_configs)
         
         self.prct=None
@@ -172,6 +174,17 @@ class AutoEncoderCNN(nn.Module):
             num_input_channels=block_configs[i][-1] 
            # outchannels_encoder.append(num_input_channels)
             
+        num_input_channels=inputmodule_paramsDec['num_input_channels']
+        self.dim=net_paramsDec['dim']
+        self.upPoolMode='bilinear'
+        if self.dim==3:
+            self.upPoolMode='trilinear'
+            
+        drop_rate=net_paramsDec['drop_rate']
+        block_configs=net_paramsDec['block_configs']
+        n_blocks=len(block_configs)
+
+
         # Decoder
         self.decoder=nn.Sequential(          
             )
@@ -195,7 +208,7 @@ class AutoEncoderCNN(nn.Module):
         
         block =  _UnCNNLayer(
             num_input_channels,
-            n_neurons=inputmodule_params['num_input_channels'],
+            n_neurons=inputmodule_paramsDec['num_input_channels'],
             drop_rate=drop_rate, dim=self.dim
             
          )
