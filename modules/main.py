@@ -38,8 +38,7 @@ def AEConfigs(Config):
         # CONFIG1
         net_paramsEnc['block_configs'] = [[32, 32], [64, 64]]
         net_paramsEnc['stride'] = [[1, 2], [1, 2]]
-        net_paramsDec['block_configs'] = [[64, 32], [
-            32, inputmodule_paramsEnc['num_input_channels']]]
+        net_paramsDec['block_configs'] = [[32, 32], [inputmodule_paramsEnc['num_input_channels'], inputmodule_paramsEnc['num_input_channels']]]
         net_paramsDec['stride'] = net_paramsEnc['stride']
         inputmodule_paramsDec['num_input_channels'] = net_paramsEnc['block_configs'][-1][-1]
 
