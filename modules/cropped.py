@@ -19,9 +19,10 @@ def load_cropped_patients(cropped_dir, cropped_csv):
                 if(file_img.endswith(".png")):
                     image = io.imread(os.path.join(cropped_dir, patient_dir, file_img))
                     image = color.rgba2rgb(image)
-                    echo(image.shape)
+                    # echo(image.shape)
                     if (image.shape[0] != 256 or image.shape[1] != 256):
-                        echo(file_img, image.shape)
+                        echo(file_img)
+                        echo(image.shape)
                     else:
                         image = image.transpose(2, 0, 1)
                         imgs.append(image)
