@@ -21,7 +21,7 @@ from models import AutoEncoderCNN
 import gc
 from train import train_autoencoder
 from losses import MSE_loss
-
+import pickle
 from utils import echo
 
 
@@ -126,9 +126,10 @@ def main():
     optimizer = optim.Adam(model.parameters(), lr=0.001)
     num_epochs = 10
 
-    train_autoencoder(model, batch_size, loss_func, device,
+    autoencoder = train_autoencoder(model, batch_size, loss_func, device,
                       loader, optimizer, num_epochs)
 
+    torch.save(autoencoder.state_dict(), "modelo_config"+str(Config)+".pth")
     # Free GPU Memory After Training
     gc.collect()
     torch.cuda.empty_cache()
