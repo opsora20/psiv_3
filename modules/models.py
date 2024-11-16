@@ -206,13 +206,13 @@ class AutoEncoderCNN(nn.Module):
 
             num_input_channels=block_configs[i][0]
         
-        block =  _UnCNNLayer(
-            num_input_channels,
-            n_neurons=inputmodule_paramsDec['num_input_channels'],
-            drop_rate=drop_rate, dim=self.dim
+        # block =  _UnCNNLayer(
+        #     num_input_channels,
+        #     n_neurons=inputmodule_paramsDec['num_input_channels'],
+        #     drop_rate=drop_rate, dim=self.dim
             
-         )
-        self.decoder.add_module("cnnblock%d" % (i), block)
+        #  )
+        # self.decoder.add_module("cnnblock%d" % (i), block)
         
     def forward(self, x: Tensor) -> Tensor:
         

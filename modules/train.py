@@ -3,6 +3,7 @@ import copy
 import torch
 import matplotlib.pyplot as plt
 import sys
+from utils import echo
 
 
 def train_autoencoder(model, batch_size, loss_func, device, loader, optimizer, num_epochs):
@@ -13,8 +14,8 @@ def train_autoencoder(model, batch_size, loss_func, device, loader, optimizer, n
     best_loss = sys.maxsize
     
     for epoch in range(1, num_epochs+1):
-        print('Epoch {}/{}'.format(epoch, num_epochs))
-        print('-' * 10)
+        echo('Epoch {}/{}'.format(epoch, num_epochs))
+        echo('-' * 10)
         
         t0 = time.time()
         
@@ -26,10 +27,10 @@ def train_autoencoder(model, batch_size, loss_func, device, loader, optimizer, n
             best_loss = loss_log['train'][-1]
             best_epoch = epoch
         
-        print("Epoch elapsed time: {:.4f}s \n".format(epoch_time))
+        echo("Epoch elapsed time: {:.4f}s \n".format(epoch_time))
         
         
-    print('Best val Loss: {:4f} at epoch {}'.format(best_loss, best_epoch))
+    echo('Best val Loss: {:4f} at epoch {}'.format(best_loss, best_epoch))
     model.load_state_dict(best_model_wts)
         
 
@@ -64,7 +65,7 @@ def train_epoch(model, batch_size, loss_func, device, loader, optimizer, loss_lo
             
         epoch_loss = running_loss/len(loader[phase])
         
-        print('{} Loss:{:.4f}'.format(phase, epoch_loss))
+        echo('{} Loss:{:.4f}'.format(phase, epoch_loss))
         loss_log[phase].append(epoch_loss)
         
         return model, loss_log

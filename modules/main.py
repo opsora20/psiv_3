@@ -8,6 +8,7 @@ Created on Tue Nov 12 13:31:01 2024
 import os
 import torch
 import torch.optim as optim
+from torch.nn import MSELoss
 import pandas as pd
 # from skimage import io, transform
 import numpy as np
@@ -121,7 +122,7 @@ def main():
     # 4.2 Model Training
     loader = {}
     loader["train"] = dataloader
-    loss_func = MSE_loss
+    loss_func = MSELoss()
     optimizer = optim.Adam(model.parameters(), lr=0.001)
     num_epochs = 10
 
