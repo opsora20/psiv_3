@@ -9,7 +9,7 @@ import os
 import torch
 import torch.optim as optim
 import pandas as pd
-#from skimage import io, transform
+# from skimage import io, transform
 import numpy as np
 import matplotlib.pyplot as plt
 from torch.utils.data import Dataset, DataLoader
@@ -25,77 +25,78 @@ from losses import MSE_loss
 ROOT_DIR = "../HelicoDataSet/CrossValidation/Cropped"
 csv_filename = "../HelicoDataSet/PatientDiagnosis.csv"
 
+
 def AEConfigs(Config):
     net_paramsEnc = {}
     net_paramsDec = {}
-    inputmodule_paramsEnc={}
-    inputmodule_paramsEnc['num_input_channels']=3
-    inputmodule_paramsDec={}
-    if Config=='1':
+    inputmodule_paramsEnc = {}
+    inputmodule_paramsEnc['num_input_channels'] = 3
+    inputmodule_paramsDec = {}
+    if Config == '1':
         # CONFIG1
-        net_paramsEnc['block_configs']=[[32,32],[64,64]]
-        net_paramsEnc['stride']=[[1,2],[1,2]]
-        net_paramsDec['block_configs']=[[64,32],[32,inputmodule_paramsEnc['num_input_channels']]]
-        net_paramsDec['stride']=net_paramsEnc['stride']
-        inputmodule_paramsDec['num_input_channels']=net_paramsEnc['block_configs'][-1][-1]
+        net_paramsEnc['block_configs'] = [[32, 32], [64, 64]]
+        net_paramsEnc['stride'] = [[1, 2], [1, 2]]
+        net_paramsDec['block_configs'] = [[64, 32], [
+            32, inputmodule_paramsEnc['num_input_channels']]]
+        net_paramsDec['stride'] = net_paramsEnc['stride']
+        inputmodule_paramsDec['num_input_channels'] = net_paramsEnc['block_configs'][-1][-1]
 
         net_paramsEnc['dim'] = 2
         net_paramsDec['dim'] = 2
 
         net_paramsEnc['drop_rate'] = 0
         net_paramsDec['drop_rate'] = 0
-     
-    elif Config=='2':
+
+    elif Config == '2':
         # CONFIG 2
-        net_paramsEnc['block_configs']=[[32],[64],[128],[256]]
-        net_paramsEnc['stride']=[[2],[2],[2],[2]]
-        net_paramsDec['block_configs']=[[128],[64],[32],[inputmodule_paramsEnc['num_input_channels']]]
-        net_paramsDec['stride']=net_paramsEnc['stride']
-        inputmodule_paramsDec['num_input_channels']=net_paramsEnc['block_configs'][-1][-1]
-        
-    elif Config=='3':  
+        net_paramsEnc['block_configs'] = [[32], [64], [128], [256]]
+        net_paramsEnc['stride'] = [[2], [2], [2], [2]]
+        net_paramsDec['block_configs'] = [[128], [64], [32],
+                                          [inputmodule_paramsEnc['num_input_channels']]]
+        net_paramsDec['stride'] = net_paramsEnc['stride']
+        inputmodule_paramsDec['num_input_channels'] = net_paramsEnc['block_configs'][-1][-1]
+
+    elif Config == '3':
         # CONFIG3
-        net_paramsEnc['block_configs']=[[32],[64],[64]]
-        net_paramsEnc['stride']=[[1],[2],[2]]
-        net_paramsDec['block_configs']=[[64],[32],[inputmodule_paramsEnc['num_input_channels']]]
-        net_paramsDec['stride']=net_paramsEnc['stride']
-        inputmodule_paramsDec['num_input_channels']=net_paramsEnc['block_configs'][-1][-1]
-    
-    return net_paramsEnc,net_paramsDec,inputmodule_paramsDec, inputmodule_paramsEnc
+        net_paramsEnc['block_configs'] = [[32], [64], [64]]
+        net_paramsEnc['stride'] = [[1], [2], [2]]
+        net_paramsDec['block_configs'] = [[64], [32], [
+            inputmodule_paramsEnc['num_input_channels']]]
+        net_paramsDec['stride'] = net_paramsEnc['stride']
+        inputmodule_paramsDec['num_input_channels'] = net_paramsEnc['block_configs'][-1][-1]
+
+    return net_paramsEnc, net_paramsDec, inputmodule_paramsDec, inputmodule_paramsEnc
 
 
 def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    print(device)
-    Config='1'
-    net_paramsEnc,net_paramsDec,inputmodule_paramsDec, inputmodule_paramsEnc=AEConfigs(Config)
-    model=AutoEncoderCNN(inputmodule_paramsEnc, net_paramsEnc,
-                        inputmodule_paramsDec, net_paramsDec)
-    print(model)
+    os.system(str(device))
+    Config = '1'
+    net_paramsEnc, net_paramsDec, inputmodule_paramsDec, inputmodule_paramsEnc = AEConfigs(
+        Config)
+    model = AutoEncoderCNN(inputmodule_paramsEnc, net_paramsEnc,
+                           inputmodule_paramsDec, net_paramsDec)
+    os.system(str(model))
     model.to(device)
 
-
-    print("Reading Dataset...")
+    os.system(str("Reading Dataset..."))
     data = HelicoDataset(csv_filename, ROOT_DIR, read_images=True)
     batch_size = 16
     dataloader = create_dataloaders(data, batch_size)
-    print("Dataset Readed")
-    ######################### 0. EXPERIMENT PARAMETERS
+    os.system(str("Dataset Readed"))
+    # 0. EXPERIMENT PARAMETERS
     # 0.1 AE PARAMETERS
 
     # 0.1 NETWORK TRAINING PARAMS
 
     # 0.2 FOLDERS
 
-
-
-    #### 1. LOAD DATA
+    # 1. LOAD DATA
     # 1.1 Patient Diagnosis
-
 
     # 1.2 Patches Data
 
-    #### 2. DATA SPLITING INTO INDEPENDENT SETS
+    # 2. DATA SPLITING INTO INDEPENDENT SETS
 
     # 2.0 Annotated set for FRed optimal threshold
 
@@ -103,9 +104,9 @@ def main():
 
     # 2.1 Diagosis crossvalidation set
 
-    #### 3. lOAD PATCHES
+    # 3. lOAD PATCHES
 
-    ### 4. AE TRAINING
+    # 4. AE TRAINING
 
     # EXPERIMENTAL DESIGN:
     # TRAIN ON AE PATIENTS AN AUTOENCODER, USE THE ANNOTATED PATIENTS TO SET THE
@@ -114,9 +115,7 @@ def main():
 
     # 4.1 Data Split
 
-
-    ###### CONFIG1
-    
+    # CONFIG1
 
     # 4.2 Model Training
     loader = {}
@@ -125,30 +124,26 @@ def main():
     optimizer = optim.Adam(model.parameters(), lr=0.001)
     num_epochs = 10
 
-
-    train_autoencoder(model, batch_size, loss_func, device, loader, optimizer, num_epochs)
-
-
+    train_autoencoder(model, batch_size, loss_func, device,
+                      loader, optimizer, num_epochs)
 
     # Free GPU Memory After Training
     gc.collect()
     torch.cuda.empty_cache()
-    #### 5. AE RED METRICS THRESHOLD LEARNING
+    # 5. AE RED METRICS THRESHOLD LEARNING
 
-    ## 5.1 AE Model Evaluation
+    # 5.1 AE Model Evaluation
 
     # Free GPU Memory After Evaluation
     gc.collect()
     torch.cuda.empty_cache()
 
-    ## 5.2 RedMetrics Threshold 
+    # 5.2 RedMetrics Threshold
 
-    ### 6. DIAGNOSIS CROSSVALIDATION
-    ### 6.1 Load Patches 4 CrossValidation of Diagnosis
+    # 6. DIAGNOSIS CROSSVALIDATION
+    # 6.1 Load Patches 4 CrossValidation of Diagnosis
 
-    ### 6.2 Diagnostic Power
-
-
+    # 6.2 Diagnostic Power
 
 
 if __name__ == "__main__":
