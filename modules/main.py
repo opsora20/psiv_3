@@ -101,80 +101,83 @@ def AEConfigs(Config):
 def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     echo(device)
-    Config = '1'
-    net_paramsEnc, net_paramsDec, inputmodule_paramsDec, inputmodule_paramsEnc = AEConfigs(
-        Config)
-    model = AutoEncoderCNN(inputmodule_paramsEnc, net_paramsEnc,
-                           inputmodule_paramsDec, net_paramsDec)
-    echo(model)
-    model.to(device)
+    for Config in range(1, 5):
+        Config = str(Config)
+        echo(Config)
+        net_paramsEnc, net_paramsDec, inputmodule_paramsDec, inputmodule_paramsEnc = AEConfigs(
+            Config)
+        model = AutoEncoderCNN(inputmodule_paramsEnc, net_paramsEnc,
+                               inputmodule_paramsDec, net_paramsDec)
+        echo(model)
+        model.to(device)
 
-    echo('Reading Dataset...')
-    data = HelicoDataset(csv_filename, ROOT_DIR, read_images=True)
-    batch_size = 16
-    dataloader = create_dataloaders(data, batch_size)
-    echo('Dataset Readed')
-    # 0. EXPERIMENT PARAMETERS
-    # 0.1 AE PARAMETERS
+        echo('Reading Dataset...')
+        data = HelicoDataset(csv_filename, ROOT_DIR, read_images=True)
+        batch_size = 16
+        dataloader = create_dataloaders(data, batch_size)
+        echo('Dataset Readed')
+        # 0. EXPERIMENT PARAMETERS
+        # 0.1 AE PARAMETERS
 
-    # 0.1 NETWORK TRAINING PARAMS
+        # 0.1 NETWORK TRAINING PARAMS
 
-    # 0.2 FOLDERS
+        # 0.2 FOLDERS
 
-    # 1. LOAD DATA
-    # 1.1 Patient Diagnosis
+        # 1. LOAD DATA
+        # 1.1 Patient Diagnosis
 
-    # 1.2 Patches Data
+        # 1.2 Patches Data
 
-    # 2. DATA SPLITING INTO INDEPENDENT SETS
+        # 2. DATA SPLITING INTO INDEPENDENT SETS
 
-    # 2.0 Annotated set for FRed optimal threshold
+        # 2.0 Annotated set for FRed optimal threshold
 
-    # 2.1 AE trainnig set
+        # 2.1 AE trainnig set
 
-    # 2.1 Diagosis crossvalidation set
+        # 2.1 Diagosis crossvalidation set
 
-    # 3. lOAD PATCHES
+        # 3. lOAD PATCHES
 
-    # 4. AE TRAINING
+        # 4. AE TRAINING
 
-    # EXPERIMENTAL DESIGN:
-    # TRAIN ON AE PATIENTS AN AUTOENCODER, USE THE ANNOTATED PATIENTS TO SET THE
-    # THRESHOLD ON FRED, VALIDATE FRED FOR DIAGNOSIS ON A 10 FOLD SCHEME OF REMAINING
-    # CASES.
+        # EXPERIMENTAL DESIGN:
+        # TRAIN ON AE PATIENTS AN AUTOENCODER, USE THE ANNOTATED PATIENTS TO SET THE
+        # THRESHOLD ON FRED, VALIDATE FRED FOR DIAGNOSIS ON A 10 FOLD SCHEME OF REMAINING
+        # CASES.
 
-    # 4.1 Data Split
+        # 4.1 Data Split
 
-    # CONFIG1
+        # CONFIG
 
-    # 4.2 Model Training
-    loader = {}
-    loader["train"] = dataloader
-    loss_func = MSELoss()
-    optimizer = optim.Adam(model.parameters(), lr=0.001)
-    num_epochs = 10
+        # 4.2 Model Training
+        loader = {}
+        loader["train"] = dataloader
+        loss_func = MSELoss()
+        optimizer = optim.Adam(model.parameters(), lr=0.001)
+        num_epochs = 10
 
-    autoencoder = train_autoencoder(model, batch_size, loss_func, device,
-                                    loader, optimizer, num_epochs)
+        autoencoder = train_autoencoder(model, batch_size, loss_func, device,
+                                        loader, optimizer, num_epochs)
 
-    torch.save(autoencoder.state_dict(), "modelo_config"+str(Config)+".pth")
-    # Free GPU Memory After Training
-    gc.collect()
-    torch.cuda.empty_cache()
-    # 5. AE RED METRICS THRESHOLD LEARNING
+        torch.save(autoencoder.state_dict(),
+                   "modelo_config"+str(Config)+".pth")
+        # Free GPU Memory After Training
+        gc.collect()
+        torch.cuda.empty_cache()
+        # 5. AE RED METRICS THRESHOLD LEARNING
 
-    # 5.1 AE Model Evaluation
+        # 5.1 AE Model Evaluation
 
-    # Free GPU Memory After Evaluation
-    gc.collect()
-    torch.cuda.empty_cache()
+        # Free GPU Memory After Evaluation
+        gc.collect()
+        torch.cuda.empty_cache()
 
-    # 5.2 RedMetrics Threshold
+        # 5.2 RedMetrics Threshold
 
-    # 6. DIAGNOSIS CROSSVALIDATION
-    # 6.1 Load Patches 4 CrossValidation of Diagnosis
+        # 6. DIAGNOSIS CROSSVALIDATION
+        # 6.1 Load Patches 4 CrossValidation of Diagnosis
 
-    # 6.2 Diagnostic Power
+        # 6.2 Diagnostic Power
 
 
 if __name__ == "__main__":
