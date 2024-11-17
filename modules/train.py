@@ -33,8 +33,6 @@ def train_autoencoder(model, batch_size, loss_func, device, loader, optimizer, n
     echo('Best val Loss: {:4f} at epoch {}'.format(best_loss, best_epoch))
     model.load_state_dict(best_model_wts)
     return model
-        
-
 
 
 def train_epoch(model, batch_size, loss_func, device, loader, optimizer, loss_log):
@@ -70,3 +68,5 @@ def train_epoch(model, batch_size, loss_func, device, loader, optimizer, loss_lo
         loss_log[phase].append(epoch_loss)
         
         return model, loss_log
+    
+    
