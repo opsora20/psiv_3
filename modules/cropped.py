@@ -14,6 +14,7 @@ def load_cropped_patients(cropped_dir, cropped_csv):
         aux = patient_dir[:-2]
         dens = cropped_csv[cropped_csv["CODI"] == aux]["DENSITAT"].iloc[0]
         if (dens == "NEGATIVA"):
+            echo(f'Reading: {patient_dir}')
             for file_img in os.listdir(os.path.join(cropped_dir, patient_dir)):
                 if (file_img.endswith(".png")):
                     image = io.imread(os.path.join(
