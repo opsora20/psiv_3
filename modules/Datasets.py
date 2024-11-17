@@ -40,7 +40,7 @@ class HelicoDataset(Dataset):
         if self._cropped:
             self._images = load_cropped_patients(self._root_dir, self._csv)
         else:
-            self._images, self._labels = load_annotated_patients(
+            self._images, self._patient, self._labels = load_annotated_patients(
                 self._root_dir, self._excel)
 
     def __len__(self):

@@ -33,12 +33,13 @@ def load_cropped_patients(cropped_dir, cropped_csv):
 
 def load_annotated_patients(annotated_dir, annotated_excel):
     patches = []
+    patient_list = []
     labels_list = []
     df_annotations = pd.read_excel(annotated_excel)
     for idx, row in df_annotations.iterrows():
-        file = row['FILENAME']
-        label = row['LABEL']
-        file_path = os.path.join(annotated_dir, file)
+        patient_dir = row["Pat_ID"] + "_" + str(row["Section_ID"])
+        window = ("0000" + str(row["Window_ID"]))[-5:]
+        file_path = os.path.join(annotated_dir, patient_dir, window+".png")
         if os.path.isfile(file_path):
             im = io.imread(file_path)
             if im.ndim == 2:
@@ -46,16 +47,18 @@ def load_annotated_patients(annotated_dir, annotated_excel):
             elif im.shape[2] > 3:
                 im = im[:, :, :3]
             if im.shape[0] != 256 or im.shape[1] != 256:
-                echo(f"Tamaño incorrecto para {file}: {im.shape}")
+                echo(f"Tamaño incorrecto para {file_path}: {im.shape}")
                 continue
             else:
                 im = im.transpose(2, 0, 1)
                 patches.append(im)
-                labels_list.append(label)
+                patient_list.append(row["Pat_ID"])
+                labels_list.append( row["Presence"])
         else:
             echo(f"Archivo no encontrado: {file_path}")
 
-    return np.array(patches), np.array(labels_list)
+
+    return np.array(patches), np.array(patient_list), np.array(labels_list)
 
 
 def create_dataloaders(class_dataset, batch):
