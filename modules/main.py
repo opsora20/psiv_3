@@ -101,6 +101,12 @@ def AEConfigs(Config):
 def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     echo(device)
+    echo('Reading Dataset...')
+    data = HelicoDataset(csv_filename, ROOT_DIR, read_images=True)
+    batch_size = 16
+    dataloader = create_dataloaders(data, batch_size)
+    echo('Dataset Readed')
+
     for Config in range(1, 5):
         Config = str(Config)
         echo(Config)
@@ -111,11 +117,6 @@ def main():
         echo(model)
         model.to(device)
 
-        echo('Reading Dataset...')
-        data = HelicoDataset(csv_filename, ROOT_DIR, read_images=True)
-        batch_size = 16
-        dataloader = create_dataloaders(data, batch_size)
-        echo('Dataset Readed')
         # 0. EXPERIMENT PARAMETERS
         # 0.1 AE PARAMETERS
 
