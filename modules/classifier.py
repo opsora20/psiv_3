@@ -3,14 +3,10 @@ from Datasets import HelicoDataset
 from cropped import create_dataloaders
 import torch
 from test import test_autoencoder
+from main import AEConfigs
 
 
-#cargamos el modelo
-#cargamos anotated
-
-
-
-PATH_AEMODEL = ""
+PATH_AEMODEL = "../modelo_config2.pth"
 ROOT_DIR = "../HelicoDataSet/CrossValidation/Annotated"
 xlsx_filename = "../HelicoDataSet/HP_WSI-CoordAllAnnotatedPatches.xlsx"
 BATCH_SIZE = 16
@@ -21,8 +17,14 @@ def main():
     dataloader = create_dataloaders(data, BATCH_SIZE)
     loader = {}
     loader["val"] = dataloader
-    modelo = AutoEncoderCNN()
-    modelo.load_state_dict(torch.load(PATH_AEMODEL))
+    config = "2"
+    net_paramsEnc, net_paramsDec, inputmodule_paramsDec, inputmodule_paramsEnc = AEConfigs(
+            config)
+    
+    modelo = AutoEncoderCNN(inputmodule_paramsEnc, net_paramsEnc,
+                               inputmodule_paramsDec, net_paramsDec)
+    
+    modelo.load_state_dict(torch.load(PATH_AEMODEL, map_location=device))
     test_autoencoder(modelo, BATCH_SIZE, device, loader, 0)
     
     

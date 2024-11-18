@@ -4,37 +4,57 @@ from sklearn.metrics import roc_curve, auc
 from sklearn.preprocessing import label_binarize
 from math import sqrt, inf
 import matplotlib.pyplot as plt
+from skimage.color import rgb2hsv
+from torch.nn import MSELoss
 
 def test_autoencoder(model, batch_size, device, loader, threshold):
     model.eval()
     target_labels = []
     pred_labels = []
     fred_list = []
-    for batch_id, inputs, label in enumerate(loader["val"]):
+    for batch_id, (inputs, labels) in enumerate(loader["val"]):
+        if batch_id == 1:
+            break
         if batch_id%100 == 0:
             print (batch_id)
         inputs = inputs.to(device)
         outputs = model(inputs)
+        i=0
+        loss_func = MSELoss
+        loss = loss_func(inputs, outputs)
+        print(loss)
         for input, output in zip(inputs, outputs):
-            fred = fred(input, output)
-            fred_list.append(fred)
+            # print(input)
+            # print(output)
+            # loss = MSELoss(input, output)
+            # print(type(loss))
+            num = i*batch_id
+            # input = np.transpose(input.cpu().detach().numpy(), axes=(1, 2, 0))
+            # output = np.transpose(output.cpu().detach().numpy(), axes=(1, 2, 0))
+
+
+
+            # fred_result = fred(input, output)
+            # print(fred_result)
+            # fred_list.append(fred_result)
             # if fred > threshold:
             #     pred_labels.append[1]
             # else:
             #     pred_labels.append[0]
             
+        
             
-    # Crear el histograma
-    plt.hist(fred_list, bins=30, color='skyblue', edgecolor='black')
+    # # Crear el histograma
+    # plt.hist(fred_list, bins=30, color='skyblue', edgecolor='black')
 
-    # Agregar etiquetas y título
-    plt.xlabel('Valor')
-    plt.ylabel('Frecuencia')
-    plt.title('Histograma de la lista de números')
+    # # Agregar etiquetas y título
+    # plt.xlabel('Valor')
+    # plt.ylabel('Frecuencia')
+    # plt.title('Histograma de la lista de números')
 
-    # Mostrar el gráfico
-    plt.savefig('histograma.png')
-    plt.close()
+    # # Mostrar el gráfico
+    # plt.savefig('histograma.png')
+    # plt.close()
             
 
                 
@@ -80,16 +100,20 @@ def roc_plot(fpr_arr, tpr_arr):
 
 
 def fred(input: torch.Tensor, output: torch.Tensor) -> float: 
-    input = np.transpose(input.cpu().numpy(), axes=(1, 2, 0))
-    output = np.transpose(output.cpu().numpy(), axes=(1, 2, 0))
+    input = np.transpose(input.cpu().detach().numpy(), axes=(1, 2, 0))
+    output = np.transpose(output.cpu().detach().numpy(), axes=(1, 2, 0))
 
-    input_hue = input[:,:,0]
-    output_hue = output[:,:,0]
+    
+    input_hsv = rgb2hsv(input)
+    output_hsv = rgb2hsv(output)
+    
+    input_hue = input_hsv[:,:,0]
+    output_hue = output_hsv[:,:,0]
     
     num = np.sum((input_hue >= -20) & (input_hue <= 20))
     den = np.sum((output_hue >= -20) & (output_hue <= 20))
     
-    fred = num/den
-    return fred
+    fred_result = num/den
+    return fred_result
 
     

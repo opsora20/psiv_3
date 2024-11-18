@@ -26,8 +26,10 @@ class HelicoDataset(Dataset):
             transform (callable, optional): Optional transform to be applied
                 on a sample.
         """
-
-        self._csv = pd.read_csv(csv_file)
+        if cropped: 
+            self._data = pd.read_csv(csv_file)
+        else:
+            self._data = pd.read_excel(csv_file)
         self._root_dir = root_dir
         self._transform = transform
         self._cropped = cropped
@@ -38,10 +40,10 @@ class HelicoDataset(Dataset):
 
     def __read_images(self):
         if self._cropped:
-            self._images = load_cropped_patients(self._root_dir, self._csv)
+            self._images = load_cropped_patients(self._root_dir, self._data)
         else:
             self._images, self._patient, self._labels = load_annotated_patients(
-                self._root_dir, self._excel)
+                self._root_dir, self._data)
 
     def __len__(self):
         return len(self._images)
@@ -63,4 +65,5 @@ class HelicoDataset(Dataset):
             if (self._transform):
                 img_sample = self._transform(img_sample)
             img_sample = img_sample.astype(np.float32)
-            return torch.from_numpy(img_sample), torch.from_numpy(label_sample)
+            
+            return torch.from_numpy(img_sample), label_sample
