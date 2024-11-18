@@ -7,13 +7,18 @@ from main import AEConfigs
 
 
 PATH_AEMODEL = "../modelo_config2.pth"
-ROOT_DIR = "../HelicoDataSet/CrossValidation/Annotated"
+#ROOT_DIR = "../HelicoDataSet/CrossValidation/Annotated"
 xlsx_filename = "../HelicoDataSet/HP_WSI-CoordAllAnnotatedPatches.xlsx"
+
+ROOT_DIR = "../HelicoDataSet/CrossValidation/Cropped"
+csv_filename = "../HelicoDataSet/PatientDiagnosis.csv"
+
+
 BATCH_SIZE = 16
 
 def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    data = HelicoDataset(xlsx_filename, ROOT_DIR, read_images=True, cropped=False)
+    data = HelicoDataset(csv_filename, ROOT_DIR, read_images=True, cropped=True)
     dataloader = create_dataloaders(data, BATCH_SIZE)
     loader = {}
     loader["val"] = dataloader
@@ -25,7 +30,9 @@ def main():
                                inputmodule_paramsDec, net_paramsDec)
     
     modelo.load_state_dict(torch.load(PATH_AEMODEL, map_location=device))
+    modelo.to(device)
     test_autoencoder(modelo, BATCH_SIZE, device, loader, 0)
+    
     
     
     

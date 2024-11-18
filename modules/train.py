@@ -53,8 +53,8 @@ def train_epoch(model, batch_size, loss_func, device, loader, optimizer, loss_lo
             
             outputs = model(inputs)
             
+
             loss = loss_func(inputs, outputs)
-            
             if phase == 'train':
                 loss.backward()
                 optimizer.step()

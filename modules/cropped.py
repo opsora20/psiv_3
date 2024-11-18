@@ -44,13 +44,13 @@ def load_annotated_patients(annotated_dir, annotated_excel):
         else:
             window = ("0000" + window)[-10:]
         file_path = os.path.join(annotated_dir, patient_dir, window+".png")
-        if row["Presence"] == 1:
+        if row["Presence"] == -1:
             if os.path.isfile(file_path):
                 im = io.imread(file_path)
                 if im.ndim == 2:
                     im = np.stack((im,)*3, axis=-1)
                 elif im.shape[2] > 3:
-                    im = im[:, :, :3]
+                    im = color.rgba2rgb(im)
                 if im.shape[0] != 256 or im.shape[1] != 256:
                     echo(f"Tamaño incorrecto para {file_path}: {im.shape}")
                     continue

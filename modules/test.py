@@ -1,7 +1,7 @@
 import numpy as np
 import torch
-from sklearn.metrics import roc_curve, auc
-from sklearn.preprocessing import label_binarize
+#from sklearn.metrics import roc_curve, auc
+#from sklearn.preprocessing import label_binarize
 from math import sqrt, inf
 import matplotlib.pyplot as plt
 from skimage.color import rgb2hsv
@@ -12,26 +12,36 @@ def test_autoencoder(model, batch_size, device, loader, threshold):
     target_labels = []
     pred_labels = []
     fred_list = []
-    for batch_id, (inputs, labels) in enumerate(loader["val"]):
+    for batch_id, inputs in enumerate(loader["val"]):
         if batch_id == 1:
             break
         if batch_id%100 == 0:
             print (batch_id)
         inputs = inputs.to(device)
         outputs = model(inputs)
-        i=0
-        loss_func = MSELoss
-        loss = loss_func(inputs, outputs)
-        print(loss)
+        loss = MSELoss()
+        l = loss(inputs, outputs)
+        print(l)
         for input, output in zip(inputs, outputs):
-            # print(input)
-            # print(output)
-            # loss = MSELoss(input, output)
-            # print(type(loss))
-            num = i*batch_id
-            # input = np.transpose(input.cpu().detach().numpy(), axes=(1, 2, 0))
-            # output = np.transpose(output.cpu().detach().numpy(), axes=(1, 2, 0))
+            input = np.transpose(input.cpu().detach().numpy(), axes=(1, 2, 0))
+            output = np.transpose(output.cpu().detach().numpy(), axes=(1, 2, 0))
+            plt.figure(figsize=(10, 5))
 
+            # Primer subplot
+            plt.subplot(1, 2, 1)  # (n_filas, n_columnas, índice)
+            plt.imshow(input)
+            plt.title('Imagen 1')
+            plt.axis('off')  # Ocultar ejes
+
+            # Segundo subplot
+            plt.subplot(1, 2, 2)
+            plt.imshow(output)
+            plt.title('Imagen 2')
+            plt.axis('off')
+
+            # Mostrar la figura
+            plt.tight_layout()  # Ajusta el espacio entre subplots
+            plt.show()
 
 
             # fred_result = fred(input, output)
