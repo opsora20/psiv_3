@@ -147,4 +147,66 @@ def fred(input: torch.Tensor, output: torch.Tensor, plot = False) -> float:
     fred_result = num/den
     return fred_result
 
+
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+batch_size = 16
+k_folds = 5
+
+output_dir = "./kfold_results"
+os.makedirs(output_dir, exist_ok=True)
+
+patient_ids = data._data['Pat_ID'].values
+
+gkf = GroupKFold(n_splits=k_folds)
+fold = 1
+
+best_thresholds = []
+
+for train_index, val_index in gkf.split(data, groups=patient_ids):
+    print(f'Fold {fold}/{k_folds}')
+    
+    val_subset = torch.utils.data.Subset(data, val_index)
+    
+    val_loader = create_dataloaders(val_subset, batch_size)
+    
+    config = '1'
+    net_paramsEnc, net_paramsDec, inputmodule_paramsDec, inputmodule_paramsEnc = AEConfigs(config)
+    model = AutoEncoderCNN(inputmodule_paramsEnc, net_paramsEnc, inputmodule_paramsDec, net_paramsDec)
+    model.load_state_dict(torch.load(os.path.join(output_dir, f"autoencoder_fold_{fold}.pth"), map_location=device))
+    model.to(device)
+    model.eval()
+    
+    fred_list = []
+    target_labels = []
+    for inputs, labels in val_loader:
+        inputs = inputs.to(device)
+        outputs = model(inputs)
+        for input, output, label in zip(inputs, outputs, labels):
+            fred_result = fred(input, output, plot=False)
+            fred_list.append(fred_result)
+            target_labels.append(label)
+    
+    fpr, tpr, thresholds = roc_curve(target_labels, fred_list)
+    optimal_idx = np.argmax(tpr - fpr)
+    best_threshold = thresholds[optimal_idx]
+    best_thresholds.append(best_threshold)
+    print(f'Mejor umbral para el fold {fold}: {best_threshold}')
+    
+    predictions = [1 if x >= best_threshold else 0 for x in fred_list]
+    correct = sum([1 if pred == true else 0 for pred, true in zip(predictions, target_labels)])
+    accuracy = correct / len(target_labels)
+    print(f'Exactitud para el fold {fold}: {accuracy}')
+    
+    with open(os.path.join(output_dir, f"results_fold_{fold}.txt"), "w") as f:
+        f.write(f"Mejor umbral para el fold {fold}: {best_threshold}\n")
+        f.write(f"Exactitud para el fold {fold}: {accuracy}\n")
+    
+    gc.collect()
+    torch.cuda.empty_cache()
+
+    fold += 1
+
+print("Evaluación completada para todos los folds.")
+
     
