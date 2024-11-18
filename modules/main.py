@@ -107,9 +107,9 @@ def main():
     dataloader = create_dataloaders(data, batch_size)
     echo('Dataset Readed')
 
-    for Config in range(1, 2):
+    for Config in range(1, 5):
         Config = str(Config)
-        echo(Config)
+        echo(f'Config: {Config}')
         net_paramsEnc, net_paramsDec, inputmodule_paramsDec, inputmodule_paramsEnc = AEConfigs(
             Config)
         model = AutoEncoderCNN(inputmodule_paramsEnc, net_paramsEnc,
