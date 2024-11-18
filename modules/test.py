@@ -7,13 +7,16 @@ import matplotlib.pyplot as plt
 from skimage.color import rgb2hsv
 from torch.nn import MSELoss
 import sys 
+from sklearn.model_selection import StratifiedGroupKFold
 
-def test_autoencoder(model, batch_size, device, loader, threshold):
+def test_autoencoder(model, device, loader):
     model.eval()
     target_labels = []
     pred_labels = []
     fred_list = []
     for batch_id, (inputs, labels) in enumerate(loader["val"]):
+        print(inputs.shape)
+        print(labels.shape)
         if batch_id%100 == 0:
             print (batch_id)
         inputs = inputs.to(device)
@@ -51,7 +54,41 @@ def test_autoencoder(model, batch_size, device, loader, threshold):
     plt.savefig('histograma_negative.png')
     plt.close()
     """
+    
+def patient_kfold(model, device, batch_size, patches, labels, patients, k):
+    patches = torch.from_numpy(patches).float()
+    sgkf = StratifiedGroupKFold(n_splits=k)
+    for fold, (train_index, test_index) in enumerate(sgkf.split(patches, labels, patients)):
+        fred_list = []
+        
+        patches_train = patches[train_index]
+        patches_test = patches[test_index]
+        labels_train = labels[train_index]
+        labels_test = labels[test_index]
+        
+        size_train = patches_train.shape[0]
+        size_test = patches_test.shape[0]
+        
+        pos = 0
+        last = batch_size
+        
+        while pos < size_train:
+            if last > size_train:
+                last = size_train
+            labels_batch = labels_train[pos : last]
+            inputs_batch = patches_train[pos : last]
+            inputs_batch = inputs_batch.to(device)
+            outputs_batch = model(inputs_batch)
+            
+            for input, output, label in zip(inputs_batch, outputs_batch, labels_batch):
+                fred_result = fred(input, output, plot = False)
+                fred_list.append(fred_result)
 
+            pos += batch_size
+            last += batch_size
+            
+        roc(fred_list, labels, plot = True)
+        
         
 def roc(freds, target_labels, plot=False):
     threshold = 0
@@ -74,8 +111,15 @@ def roc(freds, target_labels, plot=False):
                     tn += 1
                 else:
                     fn +=1
-        tpr = tp / (tp + fn)
-        fpr = fp / (fp + tn)
+        if tp == 0:
+            tpr = 0
+        else: 
+            tpr = tp / (tp + fn)
+        if fp == 0:
+            fpr = 0
+        else:
+            fpr = fp / (fp + tn)
+        print(tpr, fpr)
         tpr_list.append(tpr)
         fpr_list.append(fpr)
         d = dist_thr(fpr, tpr)
@@ -87,10 +131,8 @@ def roc(freds, target_labels, plot=False):
         roc_plot(fpr_list, tpr_list)
     return best_thr
 
-
 def dist_thr(fpr, tpr):
     return pow(pow(fpr, 2) + pow(1-tpr, 2), 0.5)
-
 
 def roc_plot(fpr_arr, tpr_arr):
     roc_auc = auc(fpr_arr, tpr_arr)
@@ -104,9 +146,6 @@ def roc_plot(fpr_arr, tpr_arr):
     plt.title('Curva ROC')
     plt.legend(loc='lower right')
     plt.show()
-    
-    
-
 
 def fred(input: torch.Tensor, output: torch.Tensor, plot = False) -> float: 
     input = np.transpose(input.cpu().detach().numpy(), axes=(1, 2, 0))
@@ -143,70 +182,15 @@ def fred(input: torch.Tensor, output: torch.Tensor, plot = False) -> float:
     den = np.sum((output_hue >= 0.95) | (output_hue <= 0.05))
     
     #print(num, den)
-
-    fred_result = num/den
+    if den == 0:
+        print("NO HAY ROJO EN LA IMAGEN DE SALIDA")
+        fred_result = 0
+    else:
+        fred_result = num/den
     return fred_result
 
 
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-batch_size = 16
-k_folds = 5
-
-output_dir = "./kfold_results"
-os.makedirs(output_dir, exist_ok=True)
-
-patient_ids = data._data['Pat_ID'].values
-
-gkf = GroupKFold(n_splits=k_folds)
-fold = 1
-
-best_thresholds = []
-
-for train_index, val_index in gkf.split(data, groups=patient_ids):
-    print(f'Fold {fold}/{k_folds}')
+        
     
-    val_subset = torch.utils.data.Subset(data, val_index)
-    
-    val_loader = create_dataloaders(val_subset, batch_size)
-    
-    config = '1'
-    net_paramsEnc, net_paramsDec, inputmodule_paramsDec, inputmodule_paramsEnc = AEConfigs(config)
-    model = AutoEncoderCNN(inputmodule_paramsEnc, net_paramsEnc, inputmodule_paramsDec, net_paramsDec)
-    model.load_state_dict(torch.load(os.path.join(output_dir, f"autoencoder_fold_{fold}.pth"), map_location=device))
-    model.to(device)
-    model.eval()
-    
-    fred_list = []
-    target_labels = []
-    for inputs, labels in val_loader:
-        inputs = inputs.to(device)
-        outputs = model(inputs)
-        for input, output, label in zip(inputs, outputs, labels):
-            fred_result = fred(input, output, plot=False)
-            fred_list.append(fred_result)
-            target_labels.append(label)
-    
-    fpr, tpr, thresholds = roc_curve(target_labels, fred_list)
-    optimal_idx = np.argmax(tpr - fpr)
-    best_threshold = thresholds[optimal_idx]
-    best_thresholds.append(best_threshold)
-    print(f'Mejor umbral para el fold {fold}: {best_threshold}')
-    
-    predictions = [1 if x >= best_threshold else 0 for x in fred_list]
-    correct = sum([1 if pred == true else 0 for pred, true in zip(predictions, target_labels)])
-    accuracy = correct / len(target_labels)
-    print(f'Exactitud para el fold {fold}: {accuracy}')
-    
-    with open(os.path.join(output_dir, f"results_fold_{fold}.txt"), "w") as f:
-        f.write(f"Mejor umbral para el fold {fold}: {best_threshold}\n")
-        f.write(f"Exactitud para el fold {fold}: {accuracy}\n")
-    
-    gc.collect()
-    torch.cuda.empty_cache()
-
-    fold += 1
-
-print("Evaluación completada para todos los folds.")
-
     

@@ -42,7 +42,7 @@ class HelicoDataset(Dataset):
         if self._cropped:
             self._images = load_cropped_patients(self._root_dir, self._data)
         else:
-            self._images, self._patient, self._labels = load_annotated_patients(
+            self._images, self._patients, self._labels = load_annotated_patients(
                 self._root_dir, self._data)
 
     def __len__(self):
@@ -67,3 +67,18 @@ class HelicoDataset(Dataset):
             img_sample = img_sample.astype(np.float32)
             
             return torch.from_numpy(img_sample), label_sample
+        
+    #  @property
+    # def images(self):
+    #     """Getter para el atributo 'images'."""
+    #     return self._images
+
+    # @property
+    # def patient(self):
+    #     """Getter para el atributo 'patient'."""
+    #     return self._patient
+    
+    # @property
+    # def labels(self):
+    #     """Getter para el atributo 'patient'."""
+    #     return self._labels
