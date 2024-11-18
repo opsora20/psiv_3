@@ -6,7 +6,6 @@ from torch.utils.data import Dataset, DataLoader
 from utils import echo
 
 
-
 def load_cropped_patients(cropped_dir, cropped_csv):
 
     imgs = []
@@ -23,9 +22,9 @@ def load_cropped_patients(cropped_dir, cropped_csv):
                     image = color.rgba2rgb(image)
                     # echo(image.shape)
                     if (image.shape[0] != 256 or image.shape[1] != 256):
-                        echo(file_img)
-                        echo(image.shape)
+                        echo(f'+ {file_img}: {image.shape}')
                     else:
+                        echo(f'- {file_img}')
                         image = image.transpose(2, 0, 1)
                         imgs.append(image)
 
@@ -39,7 +38,7 @@ def load_annotated_patients(annotated_dir, annotated_excel):
     for idx, row in annotated_excel.iterrows():
         patient_dir = row["Pat_ID"] + "_" + str(row["Section_ID"])
         window = row["Window_ID"]
-        if(isinstance(window, int)):
+        if (isinstance(window, int)):
             window = ("0000" + str(window))[-5:]
         else:
             window = ("0000" + window)[-10:]
@@ -58,12 +57,11 @@ def load_annotated_patients(annotated_dir, annotated_excel):
                     im = im.transpose(2, 0, 1)
                     patches.append(im)
                     patient_list.append(row["Pat_ID"])
-                    labels_list.append( row["Presence"])
-                
+                    labels_list.append(row["Presence"])
+
         """"Imagenes no encontradas en el directorio"""
         # else:
         #     echo(f"Archivo no encontrado: {file_path}")
-
 
     return np.array(patches), np.array(patient_list), np.array(labels_list)
 

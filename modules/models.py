@@ -134,8 +134,7 @@ class _CNNBlock(nn.ModuleDict):
 
 
 class AutoEncoderCNN(nn.Module):
-    r"""AutoEncoderCNN model class
-    `".
+    """AutoEncoderCNN model class
     """
 
     def __init__(self, inputmodule_paramsEnc, net_paramsEnc, inputmodule_paramsDec, net_paramsDec):
