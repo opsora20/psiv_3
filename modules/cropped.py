@@ -24,7 +24,7 @@ def load_cropped_patients(cropped_dir, cropped_csv):
                     if (image.shape[0] != 256 or image.shape[1] != 256):
                         echo(f'- {file_img}: {image.shape}')
                     else:
-                        echo(f'+ {file_img}')
+                        # echo(f'+ {file_img}')
                         image = image.transpose(2, 0, 1)
                         imgs.append(image)
 
