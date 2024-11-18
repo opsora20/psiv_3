@@ -25,7 +25,11 @@ def train_autoencoder(model, batch_size, loss_func, device, loader, optimizer, n
         
         if loss_log['train'][-1] < best_loss:
             best_loss = loss_log['train'][-1]
+            best_model_wts = copy.deepcopy(model.state_dict())
             best_epoch = epoch
+        if(epoch > 2):
+            if(abs(loss_log['train'][-2]- loss_log['train'][-1]) < 0.001):
+                break
         
         echo("Epoch elapsed time: {:.4f}s \n".format(epoch_time))
         
