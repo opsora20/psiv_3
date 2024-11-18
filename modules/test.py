@@ -1,98 +1,97 @@
 import numpy as np
 import torch
-#from sklearn.metrics import roc_curve, auc
-#from sklearn.preprocessing import label_binarize
+from sklearn.metrics import roc_curve, auc
+from sklearn.preprocessing import label_binarize
 from math import sqrt, inf
 import matplotlib.pyplot as plt
 from skimage.color import rgb2hsv
 from torch.nn import MSELoss
+import sys 
 
 def test_autoencoder(model, batch_size, device, loader, threshold):
     model.eval()
     target_labels = []
     pred_labels = []
     fred_list = []
-    for batch_id, inputs in enumerate(loader["val"]):
-        if batch_id == 1:
-            break
+    for batch_id, (inputs, labels) in enumerate(loader["val"]):
         if batch_id%100 == 0:
             print (batch_id)
         inputs = inputs.to(device)
         outputs = model(inputs)
-        loss = MSELoss()
-        l = loss(inputs, outputs)
-        print(l)
-        for input, output in zip(inputs, outputs):
-            input = np.transpose(input.cpu().detach().numpy(), axes=(1, 2, 0))
-            output = np.transpose(output.cpu().detach().numpy(), axes=(1, 2, 0))
-            plt.figure(figsize=(10, 5))
-
-            # Primer subplot
-            plt.subplot(1, 2, 1)  # (n_filas, n_columnas, índice)
-            plt.imshow(input)
-            plt.title('Imagen 1')
-            plt.axis('off')  # Ocultar ejes
-
-            # Segundo subplot
-            plt.subplot(1, 2, 2)
-            plt.imshow(output)
-            plt.title('Imagen 2')
-            plt.axis('off')
-
-            # Mostrar la figura
-            plt.tight_layout()  # Ajusta el espacio entre subplots
-            plt.show()
-
-
-            # fred_result = fred(input, output)
-            # print(fred_result)
-            # fred_list.append(fred_result)
-            # if fred > threshold:
-            #     pred_labels.append[1]
-            # else:
-            #     pred_labels.append[0]
+        for input, output, label in zip(inputs, outputs, labels):
+            
+            fred_result = fred(input, output, plot = False)
+            fred_list.append(fred_result)
+            target_labels.append(label)
+    roc(fred_list, target_labels, plot = True)
             
         
-            
+    """
     # # Crear el histograma
-    # plt.hist(fred_list, bins=30, color='skyblue', edgecolor='black')
+    plt.hist(fred_1_list, bins=30, color='skyblue', edgecolor='black')
 
     # # Agregar etiquetas y título
-    # plt.xlabel('Valor')
-    # plt.ylabel('Frecuencia')
-    # plt.title('Histograma de la lista de números')
+    plt.xlabel('Valor')
+    plt.ylabel('Frecuencia')
+    plt.title('Histograma de la lista de números')
 
     # # Mostrar el gráfico
-    # plt.savefig('histograma.png')
-    # plt.close()
-            
+    plt.savefig('histograma_positive.png')
+    plt.close()
 
-                
-    #         target_labels.append[label]
-    # target_labels = np.array(target_labels)
-    # target_labels[target_labels == -1] = 0
-    # pred_labels = np.array(pred_labels)
+    # # Crear el histograma
+    plt.hist(fred_2_list, bins=30, color='skyblue', edgecolor='black')
+
+    # # Agregar etiquetas y título
+    plt.xlabel('Valor')
+    plt.ylabel('Frecuencia')
+    plt.title('Histograma de la lista de números')
+
+    # # Mostrar el gráfico
+    plt.savefig('histograma_negative.png')
+    plt.close()
+    """
 
         
-def roc(target_labels, pred_labels, plot=False):
-    fpr_arr, tpr_arr, thr_arr =  roc_curve(target_labels, pred_labels)
-    dis_min = inf
-    best_thr = None
-    best_point = (None, None)
-    for fpr, tpr, thr in zip(fpr_arr, tpr_arr, thr_arr):
-        dis = sqrt(fpr**2 + (tpr-1) ** 2)
-        if dis_min < dis:
-            dis_min = dis
-            best_thr = thr
-            best_point = (fpr, tpr)
-    
-    if plot:
-        roc_plot(fpr_arr, tpr_arr)
-            
+def roc(freds, target_labels, plot=False):
+    threshold = 0
+    tpr_list = []
+    fpr_list = []
+    min_dist = sys.maxsize
+    while threshold < 1:
+        tp = 0
+        fp = 0
+        tn = 0
+        fn = 0
+        for fr, tl in zip(freds, target_labels):
+            if(fr >= threshold):
+                if(tl == 1):
+                    tp+=1
+                else:
+                    fp+=1
+            else:
+                if(tl == -1):
+                    tn += 1
+                else:
+                    fn +=1
+        tpr = tp / (tp + fn)
+        fpr = fp / (fp + tn)
+        tpr_list.append(tpr)
+        fpr_list.append(fpr)
+        d = dist_thr(fpr, tpr)
+        if (d < min_dist):
+            best_thr = threshold
+            min_dist = d
+        threshold+=0.02
+    if(plot):
+        roc_plot(fpr_list, tpr_list)
+    return best_thr
 
-    
-    return best_point, best_thr
-        
+
+def dist_thr(fpr, tpr):
+    return pow(pow(fpr, 2) + pow(1-tpr, 2), 0.5)
+
+
 def roc_plot(fpr_arr, tpr_arr):
     roc_auc = auc(fpr_arr, tpr_arr)
     plt.figure()
@@ -109,20 +108,42 @@ def roc_plot(fpr_arr, tpr_arr):
     
 
 
-def fred(input: torch.Tensor, output: torch.Tensor) -> float: 
+def fred(input: torch.Tensor, output: torch.Tensor, plot = False) -> float: 
     input = np.transpose(input.cpu().detach().numpy(), axes=(1, 2, 0))
     output = np.transpose(output.cpu().detach().numpy(), axes=(1, 2, 0))
 
-    
     input_hsv = rgb2hsv(input)
     output_hsv = rgb2hsv(output)
     
+
+    if plot:
+        plt.figure(figsize=(10, 5))
+
+        # Primer subplot
+        plt.subplot(1, 2, 1)  # (n_filas, n_columnas, índice)
+        plt.imshow(input_hsv[:,:,0])
+        plt.title('Imagen 1')
+        plt.axis('off')  # Ocultar ejes
+
+        # Segundo subplot
+        plt.subplot(1, 2, 2)
+        plt.imshow(output_hsv[:,:,0])
+        plt.title('Imagen 2')
+        plt.axis('off')
+
+        # Mostrar la figura
+        plt.tight_layout()  # Ajusta el espacio entre subplots
+        plt.show()
+
+
     input_hue = input_hsv[:,:,0]
     output_hue = output_hsv[:,:,0]
     
-    num = np.sum((input_hue >= -20) & (input_hue <= 20))
-    den = np.sum((output_hue >= -20) & (output_hue <= 20))
+    num = np.sum((input_hue >= 0.95) | (input_hue <= 0.05))
+    den = np.sum((output_hue >= 0.95) | (output_hue <= 0.05))
     
+    #print(num, den)
+
     fred_result = num/den
     return fred_result
 
