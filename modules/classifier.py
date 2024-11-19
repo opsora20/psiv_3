@@ -5,15 +5,16 @@ import torch
 from test import test_autoencoder, patient_kfold
 from main import AEConfigs
 import pandas as pd
+import warnings
 
 
-PATH_AEMODEL = "../Local_Train/modelo_config1.pth"
+PATH_AEMODEL = "../Local_Train/modelo_config3.pth"
 ROOT_DIR = "../HelicoDataSet/CrossValidation/Annotated"
 xlsx_filename = "../HelicoDataSet/HP_WSI-CoordAllAnnotatedPatches.xlsx"
 #ROOT_DIR = "../HelicoDataSet/CrossValidation/Cropped"
 csv_filename = "../HelicoDataSet/PatientDiagnosis.csv"
 BATCH_SIZE = 16
-TEST_TYPE = "autoencoder"
+TEST_TYPE = "patientkfold"
 
 def test_func(modelo, device, type, k = 5):
     if type == "autoencoder":
@@ -40,8 +41,9 @@ def test_func(modelo, device, type, k = 5):
         
             
 def main():
+    warnings.filterwarnings("ignore")
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    config = "1"
+    config = "3"
     net_paramsEnc, net_paramsDec, inputmodule_paramsDec, inputmodule_paramsEnc = AEConfigs(
             config)
     modelo = AutoEncoderCNN(inputmodule_paramsEnc, net_paramsEnc,
