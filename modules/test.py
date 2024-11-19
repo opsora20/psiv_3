@@ -8,8 +8,9 @@ from skimage.color import rgb2hsv
 from torch.nn import MSELoss
 import sys 
 from sklearn.model_selection import StratifiedGroupKFold
+import pickle
 
-def test_autoencoder(model, device, loader):
+def calculations(model, device, loader):
     model.eval()
     target_labels = []
     pred_labels = []
@@ -24,7 +25,45 @@ def test_autoencoder(model, device, loader):
             fred_result = fred(input, output, plot = False)
             fred_list.append(fred_result)
             target_labels.append(label)
-    roc(fred_list, target_labels, plot = True)
+    return target_labels, pred_labels, fred_list
+
+def test_autoencoder(model, device, loader, load: True):
+    if load:
+        with open("data.pk", "rb") as file:
+            data = pickle.load(file)
+            target_labels = data["target_labels"]
+            target_labels = np.array(target_labels)
+            target_labels[target_labels==-1] = 0
+            print(target_labels)
+            pred_labels = data["pred_labels"]
+            fred_list = data["fred_list"]
+            print(fred_list)
+    else:
+        target_labels, pred_labels, fred_list = calculations(model, device, loader)
+        with open("data.pk", "wb") as file:
+            data = {
+                "target_labels": target_labels,
+                "pred_labels": pred_labels,
+                "fred_list": fred_list,
+            }
+            
+            pickle.dump(data, file)
+        
+        
+    fpr, tpr, thr = roc_curve(target_labels, fred_list)
+    roc_auc = auc(fpr, tpr)
+    # Plot the ROC curve
+    plt.figure()  
+    plt.plot(fpr, tpr, label='ROC curve (area = %0.2f)' % roc_auc)
+    plt.plot([0, 1], [0, 1], 'k--', label='No Skill')
+    plt.xlim([0.0, 1.0])
+    plt.ylim([0.0, 1.05])
+    plt.xlabel('False Positive Rate')
+    plt.ylabel('True Positive Rate')
+    plt.title('ROC Curve for Breast Cancer Classification')
+    plt.legend()
+    plt.show()
+    # roc(fred_list, target_labels, plot = True)
             
         
     """
@@ -54,73 +93,77 @@ def test_autoencoder(model, device, loader):
     """
     
 def patient_kfold(model, device, batch_size, patches, labels, patients, k):
-    patches = patches.astype(np.float32)
-    patches = torch.from_numpy(patches)
+    patches = torch.from_numpy(patches).float()
     sgkf = StratifiedGroupKFold(n_splits=k)
-    model.eval()
-    
     for fold, (train_index, test_index) in enumerate(sgkf.split(patches, labels, patients)):
-
+        fred_list = []
+        
         patches_train = patches[train_index]
         patches_test = patches[test_index]
         labels_train = labels[train_index]
         labels_test = labels[test_index]
         
-        fred_train = get_freds(patches_train, model, batch_size, device)
-           
-        best_thr, best_tpr_train, best_fpr_train = roc(fred_train, labels_train, plot = True)
-
-        print("Fold {}: Best Threshold {:.4f}, Best TPR Train {:.4f}, Best FPR Train {:.4f}".format(fold, best_thr, best_tpr_train, best_fpr_train))
-
-        fred_test = get_freds(patches_test, model, batch_size, device)
-
-        tpr_test, fpr_test = get_rates(fred_test, labels_test, best_thr)
-
-        print("Fold {}: TPR Test {:.4f}, Best FPR Test {:.4f}".format(fold, tpr_test, fpr_test))
-
-
-def get_freds(inputs, model, batch_size, device):
-    pos = 0
-    last = batch_size
-    size = inputs.shape[0]
-    fred_list = []
-    while pos < size:
-        if last > size:
-            last = size
-        inputs_batch = inputs[pos : last]
-        inputs_batch = inputs_batch.to(device)
-        outputs_batch = model(inputs_batch)
+        size_train = patches_train.shape[0]
+        size_test = patches_test.shape[0]
         
-        for input, output in zip(inputs_batch, outputs_batch):
-            fred_result = fred(input, output, plot = False)
-            fred_list.append(fred_result)
+        pos = 0
+        last = batch_size
+        
+        while pos < size_train:
+            if last > size_train:
+                last = size_train
+            labels_batch = labels_train[pos : last]
+            inputs_batch = patches_train[pos : last]
+            inputs_batch = inputs_batch.to(device)
+            outputs_batch = model(inputs_batch)
+            
+            for input, output, label in zip(inputs_batch, outputs_batch, labels_batch):
+                fred_result = fred(input, output, plot = False)
+                fred_list.append(fred_result)
 
-        pos += batch_size
-        last += batch_size
-
-    return fred_list
-
-
-
+            pos += batch_size
+            last += batch_size
+            
+        th = roc(fred_list, labels, plot = True)
+        
+        
 def roc(freds, target_labels, plot=False):
     threshold = 0
     tpr_list = []
     fpr_list = []
     min_dist = sys.maxsize
     while threshold < 1:
-        tpr, fpr = get_rates(freds, target_labels, threshold)
+        tp = 0
+        fp = 0
+        tn = 0
+        fn = 0
+        for fr, tl in zip(freds, target_labels):
+            if(fr >= threshold):
+                if(tl == 1):
+                    tp+=1
+                else:
+                    fp+=1
+            else:
+                if(tl == -1):
+                    tn += 1
+                else:
+                    fn +=1
+        if tp == 0:
+            tpr = 0
+        else: 
+            tpr = tp / (tp + fn)
+        if fp == 0:
+            fpr = 0
+        else:
+            fpr = fp / (fp + tn)
         tpr_list.append(tpr)
         fpr_list.append(fpr)
         d = dist_thr(fpr, tpr)
         if (d < min_dist):
             best_thr = threshold
-            best_tpr = tpr
-            best_fpr = fpr
             min_dist = d
         threshold+=0.02
-    if(plot):
-        roc_plot(fpr_list, tpr_list)
-    return best_thr, best_tpr, best_fpr
+    return best_thr
 
 def dist_thr(fpr, tpr):
     return pow(pow(fpr, 2) + pow(1-tpr, 2), 0.5)
@@ -173,38 +216,17 @@ def fred(input: torch.Tensor, output: torch.Tensor, plot = False) -> float:
     den = np.sum((output_hue >= 0.95) | (output_hue <= 0.05))
     #print(num, den)
 
-    if den == 0:
-        #print("NO HAY ROJO EN LA IMAGEN DE SALIDA")
-        fred_result = 0
-    else:
-        fred_result = num/den
-        #print(fred_result)
+    # if den == 0:
+    #     #print("NO HAY ROJO EN LA IMAGEN DE SALIDA")
+    #     fred_result = 0
+    # else:
+    #     fred_result = num/den
+    #     #print(fred_result)
+    fred_result = num/den
     return fred_result
 
 
-def get_rates(freds, labels, threshold):
-    tp = 0
-    fp = 0
-    tn = 0
-    fn = 0
-    for fr, tl in zip(freds, labels):
-        if(fr >= threshold):
-            if(tl == 1):
-                tp+=1
-            else:
-                fp+=1
-        else:
-            if(tl == -1):
-                tn += 1
-            else:
-                fn +=1
-    if tp == 0:
-        tpr = 0
-    else: 
-        tpr = tp / (tp + fn)
-    if fp == 0:
-        fpr = 0
-    else:
-        fpr = fp / (fp + tn)
-    return tpr, fpr
+
+        
+    
     
