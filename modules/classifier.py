@@ -13,7 +13,7 @@ xlsx_filename = "../HelicoDataSet/HP_WSI-CoordAllAnnotatedPatches.xlsx"
 #ROOT_DIR = "../HelicoDataSet/CrossValidation/Cropped"
 csv_filename = "../HelicoDataSet/PatientDiagnosis.csv"
 BATCH_SIZE = 16
-TEST_TYPE = "patientkfold"
+TEST_TYPE = "autoencoder"
 
 def test_func(modelo, device, type, k = 5):
     if type == "autoencoder":

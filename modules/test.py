@@ -15,14 +15,12 @@ def test_autoencoder(model, device, loader):
     pred_labels = []
     fred_list = []
     for batch_id, (inputs, labels) in enumerate(loader["val"]):
-        print(inputs.shape)
-        print(labels.shape)
         if batch_id%100 == 0:
             print (batch_id)
         inputs = inputs.to(device)
         outputs = model(inputs)
         for input, output, label in zip(inputs, outputs, labels):
-            
+            #print(label)
             fred_result = fred(input, output, plot = False)
             fred_list.append(fred_result)
             target_labels.append(label)
@@ -119,7 +117,6 @@ def roc(freds, target_labels, plot=False):
             fpr = 0
         else:
             fpr = fp / (fp + tn)
-        print(tpr, fpr)
         tpr_list.append(tpr)
         fpr_list.append(fpr)
         d = dist_thr(fpr, tpr)
@@ -180,13 +177,14 @@ def fred(input: torch.Tensor, output: torch.Tensor, plot = False) -> float:
     
     num = np.sum((input_hue >= 0.95) | (input_hue <= 0.05))
     den = np.sum((output_hue >= 0.95) | (output_hue <= 0.05))
-    
     #print(num, den)
+
     if den == 0:
-        print("NO HAY ROJO EN LA IMAGEN DE SALIDA")
+        #print("NO HAY ROJO EN LA IMAGEN DE SALIDA")
         fred_result = 0
     else:
         fred_result = num/den
+        #print(fred_result)
     return fred_result
 
 
