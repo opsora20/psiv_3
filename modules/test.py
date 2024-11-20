@@ -4,11 +4,12 @@ from sklearn.metrics import roc_curve, auc
 from sklearn.preprocessing import label_binarize
 from math import sqrt, inf
 import matplotlib.pyplot as plt
-from skimage.color import rgb2hsv
+from cv2 import cvtColor, COLOR_RGB2HSV
 from torch.nn import MSELoss
 import sys 
-from sklearn.model_selection import StratifiedGroupKFold
+from sklearn.model_selection import StratifiedKFold, StratifiedGroupKFold
 import pickle
+from utils import generar_boxplot
 
 def calculations(model, device, loader):
     model.eval()
@@ -92,6 +93,66 @@ def test_autoencoder(model, device, loader, load = False):
     plt.close()
     """
     
+def patch_kfold(model, device, batch_size, patches, labels, k):
+    patches = torch.from_numpy(patches).float()
+    sgkf = StratifiedKFold(n_splits=k)
+    best_thresholds_list = []
+    for fold, (train_index, test_index) in enumerate(sgkf.split(patches, labels)):
+        fred_list = []
+        labels_list = []
+        patches_train = patches[train_index]
+        patches_test = patches[test_index]
+        labels_train = labels[train_index]
+        labels_test = labels[test_index]
+        
+        size_train = patches_train.shape[0]
+        size_test = patches_test.shape[0]
+        
+        pos = 0
+        last = batch_size
+        
+        while pos < size_train:
+            if last > size_train:
+                last = size_train
+            labels_batch = labels_train[pos : last]
+            inputs_batch = patches_train[pos : last]
+            inputs_batch = inputs_batch.to(device)
+            outputs_batch = model(inputs_batch)
+            
+            for inp, out, label in zip(inputs_batch, outputs_batch, labels_batch):
+                fred_result = fred(inp, out, plot = False)
+                fred_list.append(fred_result)
+                if(label == -1):
+                    labels_list.append(0)
+                elif(label == 1):
+                    labels_list.append(label)
+                else:
+                    labels_list.append(0)
+                
+
+            pos += batch_size
+            last += batch_size
+        #th = roc(fred_list, labels, plot = True)
+        fpr, tpr, thr = roc_curve(labels_list, fred_list)
+        roc_auc = auc(fpr, tpr)
+        # Plot the ROC curve
+        plt.figure()  
+        plt.plot(fpr, tpr, label='ROC curve (area = %0.2f)' % roc_auc)
+        plt.plot([0, 1], [0, 1], 'k--', label='No Skill')
+        plt.xlim([0.0, 1.0])
+        plt.ylim([0.0, 1.0])
+        plt.xlabel('False Positive Rate')
+        plt.ylabel('True Positive Rate')
+        plt.title('ROC Curve for Breast Cancer Classification')
+        plt.legend()
+        plt.savefig('Roc_curve_config_fold'+str(fold)+'.png')
+        best_threshold = get_best_thr(fpr, tpr, thr)
+        print("Best_threshold:", best_threshold)
+        best_thresholds_list.append(best_threshold)
+    generar_boxplot(best_thresholds_list)
+        
+        
+    
 def patient_kfold(model, device, batch_size, patches, labels, patients, k, config):
     patches = torch.from_numpy(patches).float()
     sgkf = StratifiedGroupKFold(n_splits=k)
@@ -138,7 +199,7 @@ def patient_kfold(model, device, batch_size, patches, labels, patients, k, confi
         plt.plot(fpr, tpr, label='ROC curve (area = %0.2f)' % roc_auc)
         plt.plot([0, 1], [0, 1], 'k--', label='No Skill')
         plt.xlim([0.0, 1.0])
-        plt.ylim([0.0, 1.05])
+        plt.ylim([0.0, 1.0])
         plt.xlabel('False Positive Rate')
         plt.ylabel('True Positive Rate')
         plt.title('ROC Curve for Breast Cancer Classification')
@@ -185,6 +246,18 @@ def roc(freds, target_labels, plot=False):
         threshold+=0.02
     return best_thr
 
+def get_best_thr(false_positive_rates: np.array, true_positive_rates: np.array, thresholds: np.array) -> float:
+    best_threshold = None
+    min_distance = sys.maxsize
+    for fpr, tpr, thr in zip(false_positive_rates, true_positive_rates, thresholds):
+        dist = dist_thr(fpr, tpr)
+        if dist < min_distance:
+            min_distance = dist
+            best_threshold = thr
+    return best_threshold
+        
+    
+
 def dist_thr(fpr, tpr):
     return pow(pow(fpr, 2) + pow(1-tpr, 2), 0.5)
 
@@ -205,9 +278,8 @@ def fred(input: torch.Tensor, output: torch.Tensor, plot = False) -> float:
     input = np.transpose(input.cpu().detach().numpy(), axes=(1, 2, 0))
     output = np.transpose(output.cpu().detach().numpy(), axes=(1, 2, 0))
 
-    input_hsv = rgb2hsv(input)
-    output_hsv = rgb2hsv(output)
-    
+    input_hsv = cvtColor(input, COLOR_RGB2HSV)
+    output_hsv = cvtColor(output, COLOR_RGB2HSV)
 
     if plot:
         plt.figure(figsize=(10, 5))
@@ -232,20 +304,7 @@ def fred(input: torch.Tensor, output: torch.Tensor, plot = False) -> float:
     input_hue = input_hsv[:,:,0]
     output_hue = output_hsv[:,:,0]
     
-    num = np.sum((input_hue >= 0.95) | (input_hue <= 0.05))
-    den = np.sum((output_hue >= 0.95) | (output_hue <= 0.05))
-    #print(num, den)
+    num = np.sum((input_hue <= 20) | (input_hue >= 160))
+    den = np.sum((output_hue <= 20) | (output_hue >= 160))
 
-    if den == 0:
-    #     #print("NO HAY ROJO EN LA IMAGEN DE SALIDA")
-        fred_result = 0
-    else:
-        fred_result = num/den
-    #     #print(fred_result)
-    return fred_result
-
-
-
-        
-    
-    
+    return den/num
