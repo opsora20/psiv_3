@@ -27,7 +27,7 @@ def calculations(model, device, loader):
             target_labels.append(label)
     return target_labels, pred_labels, fred_list
 
-def test_autoencoder(model, device, loader, load: True):
+def test_autoencoder(model, device, loader, load = False):
     if load:
         with open("data.pk", "rb") as file:
             data = pickle.load(file)
@@ -92,12 +92,12 @@ def test_autoencoder(model, device, loader, load: True):
     plt.close()
     """
     
-def patient_kfold(model, device, batch_size, patches, labels, patients, k):
+def patient_kfold(model, device, batch_size, patches, labels, patients, k, config):
     patches = torch.from_numpy(patches).float()
     sgkf = StratifiedGroupKFold(n_splits=k)
     for fold, (train_index, test_index) in enumerate(sgkf.split(patches, labels, patients)):
         fred_list = []
-        
+        labels_list = []
         patches_train = patches[train_index]
         patches_test = patches[test_index]
         labels_train = labels[train_index]
@@ -117,14 +117,34 @@ def patient_kfold(model, device, batch_size, patches, labels, patients, k):
             inputs_batch = inputs_batch.to(device)
             outputs_batch = model(inputs_batch)
             
-            for input, output, label in zip(inputs_batch, outputs_batch, labels_batch):
-                fred_result = fred(input, output, plot = False)
+            for inp, out, label in zip(inputs_batch, outputs_batch, labels_batch):
+                fred_result = fred(inp, out, plot = False)
                 fred_list.append(fred_result)
+                if(label == -1):
+                    labels_list.append(0)
+                elif(label == 1):
+                    labels_list.append(label)
+                else:
+                    labels_list.append(0)
+                
 
             pos += batch_size
             last += batch_size
-            
-        th = roc(fred_list, labels, plot = True)
+        #th = roc(fred_list, labels, plot = True)
+        fpr, tpr, thr = roc_curve(labels_list, fred_list)
+        roc_auc = auc(fpr, tpr)
+        # Plot the ROC curve
+        plt.figure()  
+        plt.plot(fpr, tpr, label='ROC curve (area = %0.2f)' % roc_auc)
+        plt.plot([0, 1], [0, 1], 'k--', label='No Skill')
+        plt.xlim([0.0, 1.0])
+        plt.ylim([0.0, 1.05])
+        plt.xlabel('False Positive Rate')
+        plt.ylabel('True Positive Rate')
+        plt.title('ROC Curve for Breast Cancer Classification')
+        plt.legend()
+        plt.savefig('Roc_curve_config'+config+'_fold'+str(fold)+'.png')
+        #print("Best_threshold:", thr)
         
         
 def roc(freds, target_labels, plot=False):
@@ -216,13 +236,12 @@ def fred(input: torch.Tensor, output: torch.Tensor, plot = False) -> float:
     den = np.sum((output_hue >= 0.95) | (output_hue <= 0.05))
     #print(num, den)
 
-    # if den == 0:
+    if den == 0:
     #     #print("NO HAY ROJO EN LA IMAGEN DE SALIDA")
-    #     fred_result = 0
-    # else:
-    #     fred_result = num/den
+        fred_result = 0
+    else:
+        fred_result = num/den
     #     #print(fred_result)
-    fred_result = num/den
     return fred_result
 
 
