@@ -7,15 +7,46 @@ Created on Sat Nov 16 19:55:15 2024
 import os
 import matplotlib.pyplot as plt
 
-def echo(out):
+
+def echo(out: str = "", *outs: str, **kwargs):
+    """
+    Print to console in realtime.
+
+    Parameters
+    ----------
+    sep : string, optional
+        String inserted between values. The default is " ".
+    end : strings
+        String appended after the last value. The default is newline.
+
+    Raises
+    ------
+    TypeError
+        Arguments badly given.
+
+    Returns
+    -------
+    None.
+
+    """
+    out = str(out)
+
+    try:
+        outs = " ".join(outs)
+
+        if outs != "":
+            out = out + " " + outs
+
+    except TypeError as error:
+        raise TypeError("One or more of arguments is not a string.") from error
+
     os.system(f"echo '{out}'")
 
-import matplotlib.pyplot as plt
 
 def generar_boxplot(data, titulo='Boxplot', nombre_archivo=None):
     """
     Genera un boxplot a partir de una lista de datos.
-    
+
     Parámetros:
         data (list): Lista de datos para generar el boxplot.
         titulo (str): Título del boxplot. Por defecto es 'Boxplot'.
@@ -23,14 +54,15 @@ def generar_boxplot(data, titulo='Boxplot', nombre_archivo=None):
                               Si es None, no se guarda la gráfica.
     """
     plt.figure(figsize=(8, 6))  # Tamaño del gráfico
-    plt.boxplot(data, patch_artist=True, boxprops=dict(facecolor='lightblue'))  # Boxplot con estilo
+    plt.boxplot(data, patch_artist=True, boxprops=dict(
+        facecolor='lightblue'))  # Boxplot con estilo
     plt.title(titulo)
     plt.ylabel('Valores')
     plt.grid(True, linestyle='--', alpha=0.7)  # Opcional: Añadir cuadrícula
-    
+
     # Mostrar la gráfica
     plt.show()
-    
+
     # Guardar la gráfica si se proporciona un nombre de archivo
     if nombre_archivo:
         plt.savefig(nombre_archivo, dpi=300, bbox_inches='tight')

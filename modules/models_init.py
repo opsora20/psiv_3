@@ -1,8 +1,27 @@
-import torch
+# -*- coding: utf-8 -*- noqa
+"""
+Created on Tue Nov 12 12:44:33 2024
+
+@author: joanb
+"""
+
 import torch.nn as nn
-import torch.nn.functional as F
+
 
 def init_weights_xavier_normal(module):
+    """
+    Inicialise Weights.
+
+    Parameters
+    ----------
+    module : TYPE
+        DESCRIPTION.
+
+    Returns
+    -------
+    None.
+
+    """
     for m in module.modules():
         if isinstance(m, nn.Conv1d):
             nn.init.xavier_normal_(m.weight)

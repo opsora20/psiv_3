@@ -1,84 +1,204 @@
-# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*- noqa
 """
 Created on Tue Nov 12 12:44:33 2024
 
 @author: joanb
 """
 
-import os
 import torch
+import pickle
+
 import pandas as pd
-# from skimage import io, transform
 import numpy as np
-import matplotlib.pyplot as plt
+
 from torch.utils.data import Dataset, DataLoader
-from torchvision import transforms, utils
-from cropped import load_cropped_patients, load_annotated_patients
+
+from load_datasets import load_cropped_patients, load_annotated_patients
 
 
-class HelicoDataset(Dataset):
+class AutoEncoderDataset(Dataset):
 
-    def __init__(self, csv_file, root_dir, read_images=False, transform=None, cropped=True):
-        """
-        Arguments:
-            csv_file (string): Path to the csv file with annotations.
-            root_dir (string): Directory with all the images.
-            transform (callable, optional): Optional transform to be applied
-                on a sample.
-        """
-        if cropped: 
-            self._data = pd.read_csv(csv_file)
+    def __init__(
+            self,
+            path_info_file: str,
+            dataset_root_directory: str,
+            transform=None,
+            pickle_save_file: str = "",
+            pickle_load_file: str = "",
+    ):
+        self.__info = pd.read_csv(path_info_file)
+        self.__dataset_root_directory = dataset_root_directory
+        self.__transform = transform
+
+        if pickle_load_file != "":
+            with open(pickle_load_file, "rb") as file:
+                data = pickle.load(file)
+
+                self.__images = data["__images"]
+
         else:
-            self._data = pd.read_excel(csv_file)
-        self._root_dir = root_dir
-        self._transform = transform
-        self._cropped = cropped
-        self._labels = np.array
+            self.___read_images()
+            if pickle_save_file != "":
+                with open(pickle_save_file, "wb") as file:
+                    data = {"__images": self.__images}
 
-        if (read_images):
-            self.__read_images()
+                    pickle.dump(data, file)
 
     def __read_images(self):
-        if self._cropped:
-            self._images = load_cropped_patients(self._root_dir, self._data)
-        else:
-            self._images, self._patients, self._labels = load_annotated_patients(
-                self._root_dir, self._data)
+        self.__images = load_cropped_patients(
+            self.__dataset_root_directory, self.__info)
 
     def __len__(self):
-        return len(self._images)
+        """
+        Get amount of images loaded.
+
+        Returns
+        -------
+        TYPE
+            DESCRIPTION.
+
+        """
+        return len(self.__images)
 
     def __getitem__(self, idx):
-        if self._cropped:
-            if torch.is_tensor(idx):
-                idx = idx.tolist()
-            sample = self._images[idx]
-            if (self._transform):
-                sample = self._transform(sample)
-            sample = sample.astype(np.float32)
-            return torch.from_numpy(sample)
-        else:
-            if torch.is_tensor(idx):
-                idx = idx.tolist()
-            img_sample = self._images[idx]
-            label_sample = self._labels[idx]
-            if (self._transform):
-                img_sample = self._transform(img_sample)
-            img_sample = img_sample.astype(np.float32)
-            
-            return torch.from_numpy(img_sample), label_sample
-        
+        """
+        Get item method.
+
+        Parameters
+        ----------
+        idx : TYPE
+            DESCRIPTION.
+
+        Returns
+        -------
+        TYPE
+            DESCRIPTION.
+        label_sample : TYPE
+            DESCRIPTION.
+
+        """
+        if torch.is_tensor(idx):
+            idx = idx.tolist()
+        image_sample = self.__images[idx]
+        if (self.__transform):
+            image_sample = self.__transform(image_sample)
+        image_sample = image_sample.astype(np.float32)
+        return torch.from_numpy(image_sample)
+
     #  @property
     # def images(self):
     #     """Getter para el atributo 'images'."""
-    #     return self._images
+    #     return self.__images
 
     # @property
     # def patient(self):
     #     """Getter para el atributo 'patient'."""
-    #     return self._patient
-    
+    #     return self.__patient
+
     # @property
     # def labels(self):
     #     """Getter para el atributo 'patient'."""
-    #     return self._labels
+    #     return self.__labels
+
+
+class PatchClassifierDataset():
+
+    def __init__(
+            self,
+            path_info_file: str,
+            dataset_root_directory: str,
+            transform=None,
+            pickle_save_file: str = "",
+            pickle_load_file: str = "",
+    ):
+        self.__info = pd.read_excel(path_info_file)
+        self.__dataset_root_directory = dataset_root_directory
+        self.__transform = transform
+        self.__labels = np.array
+
+        if pickle_load_file != "":
+            with open(pickle_load_file, "rb") as file:
+                data = pickle.load(file)
+
+                self.__images = data["__images"]
+                self.__patients = data["__patients"]
+                self.__labels = data["__labels"]
+
+        else:
+            self.___read_images()
+            if pickle_save_file != "":
+                with open(pickle_save_file, "wb") as file:
+                    data = {
+                        "__images": self.__images,
+                        "__patients": self.__patients,
+                        "__labels": self.__labels,
+                    }
+
+                    pickle.dump(data, file)
+
+    def __read_images(self):
+        self.__images, self.__patients, self.__labels = load_annotated_patients(
+            self.__dataset_root_directory,
+            self.__info
+        )
+
+    def __len__(self):
+        """
+        Get amount of images loaded.
+
+        Returns
+        -------
+        TYPE
+            DESCRIPTION.
+
+        """
+        return len(self.__images)
+
+    def __getitem__(self, idx):
+        """
+        Get item method.
+
+        Parameters
+        ----------
+        idx : TYPE
+            DESCRIPTION.
+
+        Returns
+        -------
+        TYPE
+            DESCRIPTION.
+        label_sample : TYPE
+            DESCRIPTION.
+
+        """
+        if torch.is_tensor(idx):
+            idx = idx.tolist()
+
+        image_sample = self.__images[idx]
+        label_sample = self.__labels[idx]
+
+        if (self.__transform):
+            image_sample = self.__transform(image_sample)
+
+        image_sample = image_sample.astype(np.float32)
+
+        return torch.from_numpy(image_sample), label_sample
+
+    #  @property
+    # def images(self):
+    #     """Getter para el atributo 'images'."""
+    #     return self.__images
+
+    # @property
+    # def patient(self):
+    #     """Getter para el atributo 'patient'."""
+    #     return self.__patient
+
+    # @property
+    # def labels(self):
+    #     """Getter para el atributo 'patient'."""
+    #     return self.__labels
+
+
+def create_dataloaders(class_dataset, batch):
+    return DataLoader(class_dataset, batch_size=batch, shuffle=True)
