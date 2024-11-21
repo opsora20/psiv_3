@@ -34,8 +34,8 @@ def calculate_area_under_the_cruve(
 
 
 def calculate_roc_curve_points(
-        target_labels: np.darray,
-        probabilities: np.darray,
+        target_labels: np.ndarray,
+        probabilities: np.ndarray,
         label_positive=None,
 ):
     """
