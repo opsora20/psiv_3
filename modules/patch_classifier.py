@@ -103,7 +103,7 @@ class PatchClassifier():
 
     def encode(self, input_image):
         input_image.to(self.__device)
-        return self.__model(input_image)
+        return self.__autoencoder(input_image)
 
     def execute(self, input_image):
         output_image = self.encode(input_image)
