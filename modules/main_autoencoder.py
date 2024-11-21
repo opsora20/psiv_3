@@ -61,7 +61,7 @@ def main():
         config = str(config)
         echo(f'Config: {config}')
 
-        model = AutoEncoderCNN(AEConfigs(config))
+        model = AutoEncoderCNN(*AEConfigs(config))
         echo(model)
 
         model.to(device)

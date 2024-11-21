@@ -45,7 +45,7 @@ def main():
     warnings.filterwarnings("ignore")
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    autoencoder = AutoEncoderCNN(AEConfigs(CONFIG))
+    autoencoder = AutoEncoderCNN(*AEConfigs(CONFIG))
     autoencoder.load_state_dict(torch.load(
         PATH_AUTOENCODER_WEIGHTS, map_location=device))
 
