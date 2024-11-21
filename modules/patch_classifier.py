@@ -15,10 +15,10 @@ from skimage.color import rgb2hsv
 
 
 class PatchClassifier():
-    def __init__(self, autoencoder, device, threshold):
+    def __init__(self, autoencoder, device, threshold=None):
         self.__autoencoder = autoencoder
         self.__device = device
-        self.__threshold
+        self.__threshold = threshold
 
         self.__autoencoder.to(device)
 

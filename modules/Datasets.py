@@ -101,7 +101,7 @@ class AutoEncoderDataset(Dataset):
         return self.__labels
 
 
-class PatchClassifierDataset():
+class PatchClassifierDataset(Dataset):
 
     def __init__(
             self,
