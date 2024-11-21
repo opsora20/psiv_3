@@ -51,7 +51,7 @@ def main():
 
     model = PatchClassifier(autoencoder, device, 1)
 
-    if PATH_LOAD_PICKLE_CLASSIFIER_CALCULATIONS == "":
+    if PATH_LOAD_PICKLE_CLASSIFIER_CALCULATIONS != "":
         with open(PATH_LOAD_PICKLE_CLASSIFIER_CALCULATIONS, "rb") as file:
             data = pickle.load(file)
 
