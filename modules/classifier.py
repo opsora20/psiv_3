@@ -7,14 +7,14 @@ from main import AEConfigs
 import pandas as pd
 import warnings
 
- 
-PATH_AEMODEL = "../trained_full/modelo_config1.pth"
+
+PATH_AEMODEL = "../trained_full/modelo_config4.pth"
 ROOT_DIR = "../HelicoDataSet/CrossValidation/Annotated"
 xlsx_filename = "../HelicoDataSet/HP_WSI-CoordAllAnnotatedPatches.xlsx"
-#ROOT_DIR = "../HelicoDataSet/CrossValidation/Cropped"
 csv_filename = "../HelicoDataSet/PatientDiagnosis.csv"
 BATCH_SIZE = 16
-TEST_TYPE = "patchkfold"
+TEST_TYPE = "patientkfold"
+PATCH_THRESHOLD = 1.000962487553998
 
 def test_func(modelo, device, type, k = 5, load= True):
     if type == "autoencoder":
@@ -40,11 +40,8 @@ def test_func(modelo, device, type, k = 5, load= True):
             modelo.load_state_dict(torch.load(PATH_AEMODEL, map_location=device))
             modelo.to(device)
 
-            patient_kfold(modelo, device, BATCH_SIZE, patches, labels, patients, k, config)
-            
-
-        
-        
+            patient_kfold(modelo, device, BATCH_SIZE, patches, labels, patients, k, config, PATCH_THRESHOLD)
+     
     elif type == "patchkfold":
         annotated_excel = pd.read_excel(xlsx_filename)
         patches, patients, labels  = load_annotated_patients(ROOT_DIR, annotated_excel)
@@ -55,7 +52,7 @@ def test_func(modelo, device, type, k = 5, load= True):
 def main():
     warnings.filterwarnings("ignore")
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    config = "1"
+    config = "4"
     net_paramsEnc, net_paramsDec, inputmodule_paramsDec, inputmodule_paramsEnc = AEConfigs(
                     config)
     modelo = AutoEncoderCNN(inputmodule_paramsEnc, net_paramsEnc,

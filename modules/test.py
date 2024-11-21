@@ -61,7 +61,7 @@ def test_autoencoder(model, device, loader, load = False):
     plt.ylim([0.0, 1.05])
     plt.xlabel('False Positive Rate')
     plt.ylabel('True Positive Rate')
-    plt.title('ROC Curve for Breast Cancer Classification')
+    plt.title('ROC Curve for H. Pylori Patch Classification')
     plt.legend()
     plt.show()
     # roc(fred_list, target_labels, plot = True)
@@ -143,21 +143,30 @@ def patch_kfold(model, device, batch_size, patches, labels, k):
         plt.ylim([0.0, 1.0])
         plt.xlabel('False Positive Rate')
         plt.ylabel('True Positive Rate')
-        plt.title('ROC Curve for Breast Cancer Classification')
+        plt.title('ROC Curve for H. Pylori Patch Classification')
         plt.legend()
         plt.savefig('Roc_curve_config_fold'+str(fold)+'.png')
         best_threshold = get_best_thr(fpr, tpr, thr)
         print("Best_threshold:", best_threshold)
         best_thresholds_list.append(best_threshold)
     generar_boxplot(best_thresholds_list)
+    
+    mean_thr = 0
+    for val in best_thresholds_list:
+        mean_thr += val
+
+    mean_thr/=k
+    print("EL MEJOR THRESHOLD ENCONTRADO PARA CLASIFICAR LOS PATCHES ES:"+str(mean_thr))
         
         
     
-def patient_kfold(model, device, batch_size, patches, labels, patients, k, config):
+def patient_kfold(model, device, batch_size, patches, labels, patients, k, config, patch_thr):
     patches = torch.from_numpy(patches).float()
     sgkf = StratifiedGroupKFold(n_splits=k)
+    best_thresholds_list = []
     for fold, (train_index, test_index) in enumerate(sgkf.split(patches, labels, patients)):
         fred_list = []
+        
         labels_list = []
         patches_train = patches[train_index]
         patches_test = patches[test_index]
@@ -202,10 +211,22 @@ def patient_kfold(model, device, batch_size, patches, labels, patients, k, confi
         plt.ylim([0.0, 1.0])
         plt.xlabel('False Positive Rate')
         plt.ylabel('True Positive Rate')
-        plt.title('ROC Curve for Breast Cancer Classification')
+        plt.title('ROC Curve for H. Pylori Patch Classification')
         plt.legend()
         plt.savefig('Roc_curve_config'+config+'_fold'+str(fold)+'.png')
-        #print("Best_threshold:", thr)
+
+        
+        best_threshold = get_best_thr(fpr, tpr, thr)
+        print("Best_threshold:", best_threshold)
+        best_thresholds_list.append(best_threshold)
+    generar_boxplot(best_thresholds_list)
+    
+    mean_thr = 0
+    for val in best_thresholds_list:
+        mean_thr += val
+
+    mean_thr/=k
+    print("EL MEJOR THRESHOLD ENCONTRADO PARA CLASIFICAR LOS PACIENTES ES:"+str(mean_thr))
         
         
 def roc(freds, target_labels, plot=False):

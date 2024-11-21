@@ -14,7 +14,7 @@ from datasets import PatchClassifierDataset, create_dataloaders
 
 from patch_classifier import PatchClassifier
 from train_patch_classifier import train_patch_classifier
-from roc_curve import roc
+
 
 
 DIRECTORY_ANNOTATED = "../HelicoDataSet/CrossValidation/Annotated"
@@ -32,6 +32,8 @@ PATH_SAVE_PICKLE_DATASET = ""
 PATH_LOAD_PICKLE_CLASSIFIER_CALCULATIONS = ""
 PATH_SAVE_PICKLE_CLASSIFIER_CALCULATIONS = ""
 
+FOLDS = 5
+
 
 def main():
     """
@@ -45,13 +47,13 @@ def main():
     warnings.filterwarnings("ignore")
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    autoencoder = AutoEncoderCNN(AEConfigs(CONFIG))
+    autoencoder = AutoEncoderCNN(*AEConfigs(CONFIG))
     autoencoder.load_state_dict(torch.load(
         PATH_AUTOENCODER_WEIGHTS, map_location=device))
 
     model = PatchClassifier(autoencoder, device)
 
-    if PATH_LOAD_PICKLE_CLASSIFIER_CALCULATIONS == "":
+    if PATH_LOAD_PICKLE_CLASSIFIER_CALCULATIONS != "":
         with open(PATH_LOAD_PICKLE_CLASSIFIER_CALCULATIONS, "rb") as file:
             data = pickle.load(file)
 
@@ -66,24 +68,16 @@ def main():
             pickle_save_file=PATH_SAVE_PICKLE_DATASET,
         )
 
-        dataloader = create_dataloaders(dataset, BATCH_SIZE)
+        mean_thr, mean_fpr, mean_tpr = train_patch_classifier(model, dataset, device, BATCH_SIZE, FOLDS)
+    print(mean_thr, mean_fpr, mean_tpr)
+    # if PATH_SAVE_PICKLE_CLASSIFIER_CALCULATIONS != "":
+    #     with open(PATH_SAVE_PICKLE_CLASSIFIER_CALCULATIONS, "wb") as file:
+    #         data = {
+    #             "fred_list": fred_list,
+    #             "target_labels": target_labels,
+    #         }
 
-        fred_list, target_labels = train_patch_classifier(model, dataloader)
-
-    if PATH_SAVE_PICKLE_CLASSIFIER_CALCULATIONS != "":
-        with open(PATH_SAVE_PICKLE_CLASSIFIER_CALCULATIONS, "wb") as file:
-            data = {
-                "fred_list": fred_list,
-                "target_labels": target_labels,
-            }
-
-            pickle.dump(data, file)
-
-    roc(
-        target_labels,
-        fred_list,
-        f"ROC Curve for HelicoBacter in patches [{CONFIG}]",
-    )
+    #         pickle.dump(data, file)
 
 
 if __name__ == "__main__":

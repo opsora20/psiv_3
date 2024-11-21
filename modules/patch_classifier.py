@@ -12,15 +12,15 @@ import torch
 import matplotlib.pyplot as plt
 
 from copy import deepcopy
-from skimage.color import rgb2hsv
-from sklearn.metrics import roc_curve, auc
+from cv2 import cvtColor, COLOR_RGB2HSV
+
 
 
 class PatchClassifier():
-    def __init__(self, autoencoder, device, threshold):
+    def __init__(self, autoencoder, device, threshold=None):
         self.__autoencoder = autoencoder
         self.__device = device
-        self.__threshold
+        self.__threshold = threshold
 
         self.__autoencoder.to(device)
 
@@ -56,45 +56,35 @@ class PatchClassifier():
         output_image = np.transpose(
             output_image.cpu().detach().numpy(), axes=(1, 2, 0))
 
-        input_hsv = rgb2hsv(input_image)
-        output_hsv = rgb2hsv(output_image)
+        input_hsv = cvtColor(input_image, COLOR_RGB2HSV)
+        output_hsv = cvtColor(output_image, COLOR_RGB2HSV)
 
         input_hue = input_hsv[:, :, 0]
         output_hue = output_hsv[:, :, 0]
 
-        num = np.sum((input_hue >= 0.95) | (input_hue <= 0.05))
-        den = np.sum((output_hue >= 0.95) | (output_hue <= 0.05))
-
-        selected_hue = deepcopy(output_hue)
-
-        selected_hue[(selected_hue >= 0.95) | (selected_hue <= 0.05)]
+        num = np.sum((input_hue <= 20) | (input_hue >= 160))
+        den = np.sum((output_hue <= 20) | (output_hue >= 160))
 
         if show:
             plt.figure(figsize=(10, 5))
 
             # Primer subplot
-            plt.subplot(1, 3, 1)  # (n_filas, n_columnas, índice)
+            plt.subplot(1, 2, 1)  # (n_filas, n_columnas, índice)
             plt.imshow(input_hue)
             plt.title('Imagen 1')
             plt.axis('off')  # Ocultar ejes
 
             # Segundo subplot
-            plt.subplot(1, 3, 2)
+            plt.subplot(1, 2, 2)
             plt.imshow(output_hue)
             plt.title('Imagen 2')
-            plt.axis('off')
-
-            # Tercer subplot
-            plt.subplot(1, 3, 3)
-            plt.imshow(selected_hue)
-            plt.title('Imagen 3')
             plt.axis('off')
 
             # Mostrar la figura
             plt.tight_layout()  # Ajusta el espacio entre subplots
             plt.show()
 
-        fred = num / den
+        fred = den / num
 
         return fred
 
@@ -105,7 +95,7 @@ class PatchClassifier():
 
     def encode(self, input_image):
         input_image.to(self.__device)
-        return self.__model(input_image)
+        return self.__autoencoder(input_image)
 
     def execute(self, input_image):
         output_image = self.encode(input_image)
