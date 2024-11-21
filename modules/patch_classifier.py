@@ -6,21 +6,19 @@ Created on Tue Nov 12 12:44:33 2024
 """
 
 import numpy as np
-import pickle
 import torch
 
 import matplotlib.pyplot as plt
 
 from copy import deepcopy
 from skimage.color import rgb2hsv
-from sklearn.metrics import roc_curve, auc
 
 
 class PatchClassifier():
-    def __init__(self, autoencoder, device, threshold):
+    def __init__(self, autoencoder, device, threshold=None):
         self.__autoencoder = autoencoder
         self.__device = device
-        self.__threshold
+        self.__threshold = threshold
 
         self.__autoencoder.to(device)
 

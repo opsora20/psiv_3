@@ -129,23 +129,23 @@ class AutoEncoderDataset(Dataset):
             image_sample = image_sample.astype(np.float32)
             return torch.from_numpy(image_sample)
 
-    #  @property
-    # def images(self):
-    #     """Getter para el atributo 'images'."""
-    #     return self.__images
+    @property
+    def images(self):
+        """Getter para el atributo 'images'."""
+        return self.__images
 
-    # @property
-    # def patient(self):
-    #     """Getter para el atributo 'patient'."""
-    #     return self.__patient
+    @property
+    def patient(self):
+        """Getter para el atributo 'patient'."""
+        return self.__patient
 
-    # @property
-    # def labels(self):
-    #     """Getter para el atributo 'patient'."""
-    #     return self.__labels
+    @property
+    def labels(self):
+        """Getter para el atributo 'patient'."""
+        return self.__labels
 
 
-class PatchClassifierDataset():
+class PatchClassifierDataset(Dataset):
 
     def __init__(
             self,
@@ -169,6 +169,7 @@ class PatchClassifierDataset():
                 self.__labels = data["__labels"]
 
         else:
+            self.__read_images()
             self.__read_images()
             if pickle_save_file != "":
                 with open(pickle_save_file, "wb") as file:
@@ -228,16 +229,20 @@ class PatchClassifierDataset():
 
         return torch.from_numpy(image_sample), label_sample
 
-    #  @property
-    # def images(self):
-    #     """Getter para el atributo 'images'."""
-    #     return self.__images
+    @property
+    def images(self):
+        """Getter para el atributo 'images'."""
+        return self.__images
 
-    # @property
-    # def patient(self):
-    #     """Getter para el atributo 'patient'."""
-    #     return self.__patient
+    @property
+    def patient(self):
+        """Getter para el atributo 'patient'."""
+        return self.__patient
 
+    @property
+    def labels(self):
+        """Getter para el atributo 'patient'."""
+        return self.__labels
     @property
     def labels(self):
         """Getter para el atributo 'patient'."""

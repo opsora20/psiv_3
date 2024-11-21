@@ -45,11 +45,11 @@ def main():
     warnings.filterwarnings("ignore")
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    autoencoder = AutoEncoderCNN(AEConfigs(CONFIG))
+    autoencoder = AutoEncoderCNN(*AEConfigs(CONFIG))
     autoencoder.load_state_dict(torch.load(
         PATH_AUTOENCODER_WEIGHTS, map_location=device))
 
-    model = PatchClassifier(autoencoder, device)
+    model = PatchClassifier(autoencoder, device, 1)
 
     if PATH_LOAD_PICKLE_CLASSIFIER_CALCULATIONS == "":
         with open(PATH_LOAD_PICKLE_CLASSIFIER_CALCULATIONS, "rb") as file:
