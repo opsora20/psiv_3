@@ -37,7 +37,7 @@ class AutoEncoderDataset(Dataset):
                 self.__images = data["__images"]
 
         else:
-            self.___read_images()
+            self.__read_images()
             if pickle_save_file != "":
                 with open(pickle_save_file, "wb") as file:
                     data = {"__images": self.__images}
@@ -125,7 +125,7 @@ class PatchClassifierDataset():
                 self.__labels = data["__labels"]
 
         else:
-            self.___read_images()
+            self.__read_images()
             if pickle_save_file != "":
                 with open(pickle_save_file, "wb") as file:
                     data = {
