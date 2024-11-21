@@ -26,7 +26,7 @@ class AutoEncoderDataset(Dataset):
             path_info_file: str,
             dataset_root_directory: str,
             transform=None,
-            read = True,
+            read=True,
             pickle_save_file: str = "",
             pickle_load_file: str = "",
     ):
@@ -41,7 +41,7 @@ class AutoEncoderDataset(Dataset):
 
                 self.__images = data["__images"]
 
-        elif(self.__read):
+        elif (self.__read):
             self.__read_images()
             if pickle_save_file != "":
                 with open(pickle_save_file, "wb") as file:
@@ -83,7 +83,6 @@ class AutoEncoderDataset(Dataset):
             image = image.transpose(2, 0, 1)
         return image
 
-
     def __len__(self):
         """
         Get amount of images loaded.
@@ -114,9 +113,9 @@ class AutoEncoderDataset(Dataset):
 
         """
         if torch.is_tensor(idx):
-                idx = idx.tolist()
+            idx = idx.tolist()
         image_sample = self.__images[idx]
-        if(self.__read):
+        if (self.__read):
 
             if (self.__transform):
                 image_sample = self.__transform(image_sample)
@@ -239,10 +238,6 @@ class PatchClassifierDataset(Dataset):
         """Getter para el atributo 'patient'."""
         return self.__patient
 
-    @property
-    def labels(self):
-        """Getter para el atributo 'patient'."""
-        return self.__labels
     @property
     def labels(self):
         """Getter para el atributo 'patient'."""

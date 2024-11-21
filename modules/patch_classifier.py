@@ -14,9 +14,7 @@ from copy import deepcopy
 from cv2 import cvtColor, COLOR_RGB2HSV
 
 
-
 class PatchClassifier():
-    def __init__(self, autoencoder, device, threshold=None):
     def __init__(self, autoencoder, device, threshold=None):
         self.__autoencoder = autoencoder
         self.__device = device
@@ -96,7 +94,6 @@ class PatchClassifier():
 
     def encode(self, input_image):
         input_image.to(self.__device)
-        return self.__autoencoder(input_image)
         return self.__autoencoder(input_image)
 
     def execute(self, input_image):
