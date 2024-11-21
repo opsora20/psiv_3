@@ -124,3 +124,15 @@ def __train_epoch(
         loss_log[phase].append(epoch_loss)
 
         return model, loss_log
+
+def train_attention(
+        model,
+        loss_func,
+        device,
+        loader,
+        optimizer,
+        num_epochs,
+        precission: float = 0.001
+):
+    
+    pass
