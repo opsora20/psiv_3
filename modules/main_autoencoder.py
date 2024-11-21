@@ -13,13 +13,14 @@ import torch.optim as optim
 
 from torch.nn import MSELoss
 
-from Datasets import AutoEncoderDataset, create_dataloaders
+from datasets import AutoEncoderDataset, create_dataloaders
 from autoencoder import AEConfigs, AutoEncoderCNN
 from train_autoencoder import train_autoencoder
 from utils import echo
 
 
-DIRECTORY_CROPPED = os.path.join("..","HelicoDataSet","CrossValidation","Cropped")
+DIRECTORY_CROPPED = os.path.join(
+    "..", "HelicoDataSet", "CrossValidation", "Cropped")
 PATH_PATIENT_DIAGNOSIS = "../HelicoDataSet/PatientDiagnosis.csv"
 
 DIRECTORY_SAVE_MODELS = "../models"
@@ -46,7 +47,7 @@ def main():
     data = AutoEncoderDataset(
         PATH_PATIENT_DIAGNOSIS,
         DIRECTORY_CROPPED,
-        read = False,
+        read=False,
         pickle_load_file=PATH_LOAD_PICKLE_DATASET,
         pickle_save_file=PATH_SAVE_PICKLE_DATASET,
     )
