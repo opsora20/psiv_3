@@ -18,6 +18,8 @@ from load_datasets import load_cropped_patients, load_annotated_patients
 import os
 from skimage import io, color
 
+target_height, target_width = 256, 256
+
 
 class AutoEncoderDataset(Dataset):
 
@@ -77,10 +79,20 @@ class AutoEncoderDataset(Dataset):
         image = io.imread(image_path)
         image = color.rgba2rgb(image)
         if (image.shape[0] != 256 or image.shape[1] != 256):
-            pass
-        else:
-            # echo(f'+ {file_img}')
-            image = image.transpose(2, 0, 1)
+            original_height, original_width, channels = image.shape
+            canvas = np.ones(
+                (target_height, target_width,
+                 channels),
+                dtype=image.dtype) * 255
+
+            y_offset = (target_height - original_height) // 2
+            x_offset = (target_width - original_width) // 2
+
+            canvas[y_offset:y_offset+original_height,
+                   x_offset:x_offset+original_width] = image
+            image = canvas
+
+        image = image.transpose(2, 0, 1)
         return image
 
     def __len__(self):

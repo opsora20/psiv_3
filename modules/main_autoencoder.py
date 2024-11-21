@@ -20,8 +20,8 @@ from utils import echo
 
 
 DIRECTORY_CROPPED = os.path.join(
-    "..", "HelicoDataSet", "CrossValidation", "Cropped")
-PATH_PATIENT_DIAGNOSIS = "../HelicoDataSet/PatientDiagnosis.csv"
+    "..", "..", "maed", "HelicoDataSet", "CrossValidation", "Cropped")
+PATH_PATIENT_DIAGNOSIS = "../../maed/HelicoDataSet/PatientDiagnosis.csv"
 
 DIRECTORY_SAVE_MODELS = "../models"
 
