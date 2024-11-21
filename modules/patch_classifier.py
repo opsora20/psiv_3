@@ -6,7 +6,6 @@ Created on Tue Nov 12 12:44:33 2024
 """
 
 import numpy as np
-import pickle
 import torch
 
 import matplotlib.pyplot as plt
@@ -18,8 +17,10 @@ from cv2 import cvtColor, COLOR_RGB2HSV
 
 class PatchClassifier():
     def __init__(self, autoencoder, device, threshold=None):
+    def __init__(self, autoencoder, device, threshold=None):
         self.__autoencoder = autoencoder
         self.__device = device
+        self.__threshold = threshold
         self.__threshold = threshold
 
         self.__autoencoder.to(device)
@@ -95,6 +96,7 @@ class PatchClassifier():
 
     def encode(self, input_image):
         input_image.to(self.__device)
+        return self.__autoencoder(input_image)
         return self.__autoencoder(input_image)
 
     def execute(self, input_image):

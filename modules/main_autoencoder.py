@@ -19,7 +19,8 @@ from train_autoencoder import train_autoencoder
 from utils import echo
 
 
-DIRECTORY_CROPPED = "../HelicoDataSet/CrossValidation/Cropped"
+DIRECTORY_CROPPED = os.path.join(
+    "..", "HelicoDataSet", "CrossValidation", "Cropped")
 PATH_PATIENT_DIAGNOSIS = "../HelicoDataSet/PatientDiagnosis.csv"
 
 DIRECTORY_SAVE_MODELS = "../models"
@@ -46,6 +47,7 @@ def main():
     data = AutoEncoderDataset(
         PATH_PATIENT_DIAGNOSIS,
         DIRECTORY_CROPPED,
+        read=False,
         pickle_load_file=PATH_LOAD_PICKLE_DATASET,
         pickle_save_file=PATH_SAVE_PICKLE_DATASET,
     )
@@ -61,7 +63,7 @@ def main():
         config = str(config)
         echo(f'Config: {config}')
 
-        model = AutoEncoderCNN(AEConfigs(config))
+        model = AutoEncoderCNN(*AEConfigs(config))
         echo(model)
 
         model.to(device)

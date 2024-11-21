@@ -15,6 +15,9 @@ from torch.utils.data import Dataset, DataLoader
 
 from load_datasets import load_cropped_patients, load_annotated_patients
 
+import os
+from skimage import io, color
+
 
 class AutoEncoderDataset(Dataset):
 
@@ -23,12 +26,14 @@ class AutoEncoderDataset(Dataset):
             path_info_file: str,
             dataset_root_directory: str,
             transform=None,
+            read = True,
             pickle_save_file: str = "",
             pickle_load_file: str = "",
     ):
         self.__info = pd.read_csv(path_info_file)
         self.__dataset_root_directory = dataset_root_directory
         self.__transform = transform
+        self.__read = read
 
         if pickle_load_file != "":
             with open(pickle_load_file, "rb") as file:
@@ -36,17 +41,48 @@ class AutoEncoderDataset(Dataset):
 
                 self.__images = data["__images"]
 
-        else:
-            self.___read_images()
+        elif(self.__read):
+            self.__read_images()
             if pickle_save_file != "":
                 with open(pickle_save_file, "wb") as file:
                     data = {"__images": self.__images}
 
                     pickle.dump(data, file)
+        else:
+            self.__read_names()
 
     def __read_images(self):
         self.__images = load_cropped_patients(
             self.__dataset_root_directory, self.__info)
+
+    def __read_names(self):
+        self.__images = []
+        for patient_directory in os.listdir(self.__dataset_root_directory):
+            aux = patient_directory[:-2]
+            dens = self.__info[self.__info["CODI"] == aux]["DENSITAT"].iloc[0]
+            if (dens == "NEGATIVA"):
+                for image_file in os.listdir(os.path.join(
+                        self.__dataset_root_directory,
+                        patient_directory
+                )):
+                    if (image_file.endswith(".png")):
+                        self.__images.append(os.path.join(
+                            self.__dataset_root_directory,
+                            patient_directory,
+                            image_file
+                        ))
+        self.__images = np.array(self.__images)
+
+    def __read_image_sample(self, image_path):
+        image = io.imread(image_path)
+        image = color.rgba2rgb(image)
+        if (image.shape[0] != 256 or image.shape[1] != 256):
+            pass
+        else:
+            # echo(f'+ {file_img}')
+            image = image.transpose(2, 0, 1)
+        return image
+
 
     def __len__(self):
         """
@@ -78,30 +114,38 @@ class AutoEncoderDataset(Dataset):
 
         """
         if torch.is_tensor(idx):
-            idx = idx.tolist()
+                idx = idx.tolist()
         image_sample = self.__images[idx]
-        if (self.__transform):
-            image_sample = self.__transform(image_sample)
-        image_sample = image_sample.astype(np.float32)
-        return torch.from_numpy(image_sample)
+        if(self.__read):
 
-    #  @property
-    # def images(self):
-    #     """Getter para el atributo 'images'."""
-    #     return self.__images
+            if (self.__transform):
+                image_sample = self.__transform(image_sample)
+            image_sample = image_sample.astype(np.float32)
+            return torch.from_numpy(image_sample)
+        else:
+            image_sample = self.__read_image_sample(image_sample)
+            if (self.__transform):
+                image_sample = self.__transform(image_sample)
+            image_sample = image_sample.astype(np.float32)
+            return torch.from_numpy(image_sample)
 
-    # @property
-    # def patient(self):
-    #     """Getter para el atributo 'patient'."""
-    #     return self.__patient
+    @property
+    def images(self):
+        """Getter para el atributo 'images'."""
+        return self.__images
 
-    # @property
-    # def labels(self):
-    #     """Getter para el atributo 'patient'."""
-    #     return self.__labels
+    @property
+    def patient(self):
+        """Getter para el atributo 'patient'."""
+        return self.__patient
+
+    @property
+    def labels(self):
+        """Getter para el atributo 'patient'."""
+        return self.__labels
 
 
-class PatchClassifierDataset():
+class PatchClassifierDataset(Dataset):
 
     def __init__(
             self,
@@ -125,7 +169,8 @@ class PatchClassifierDataset():
                 self.__labels = data["__labels"]
 
         else:
-            self.___read_images()
+            self.__read_images()
+            self.__read_images()
             if pickle_save_file != "":
                 with open(pickle_save_file, "wb") as file:
                     data = {
@@ -184,20 +229,24 @@ class PatchClassifierDataset():
 
         return torch.from_numpy(image_sample), label_sample
 
-    #  @property
-    # def images(self):
-    #     """Getter para el atributo 'images'."""
-    #     return self.__images
+    @property
+    def images(self):
+        """Getter para el atributo 'images'."""
+        return self.__images
 
-    # @property
-    # def patient(self):
-    #     """Getter para el atributo 'patient'."""
-    #     return self.__patient
+    @property
+    def patient(self):
+        """Getter para el atributo 'patient'."""
+        return self.__patient
 
-    # @property
-    # def labels(self):
-    #     """Getter para el atributo 'patient'."""
-    #     return self.__labels
+    @property
+    def labels(self):
+        """Getter para el atributo 'patient'."""
+        return self.__labels
+    @property
+    def labels(self):
+        """Getter para el atributo 'patient'."""
+        return self.__labels
 
 
 def create_dataloaders(class_dataset, batch):

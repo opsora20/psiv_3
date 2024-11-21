@@ -11,8 +11,8 @@ from sklearn.metrics import roc_curve, auc
 
 
 def calculate_area_under_the_cruve(
-        false_posotive_rate: np.darray,
-        true_positive_rate: np.darray,
+        false_posotive_rate: np.ndarray,
+        true_positive_rate: np.ndarray,
 ) -> float:
     """
     Calculate the area under the currve for a ROC curve.
@@ -34,8 +34,8 @@ def calculate_area_under_the_cruve(
 
 
 def calculate_roc_curve_points(
-        target_labels: np.darray,
-        probabilities: np.darray,
+        target_labels: np.ndarray,
+        probabilities: np.ndarray,
         label_positive=None,
 ):
     """
@@ -84,8 +84,8 @@ def distance_to_perfection(x: float, y: float) -> float:
 
 
 def plot_roc(
-        false_posotive_rate: np.darray,
-        true_positive_rate: np.darray,
+        false_posotive_rate: np.ndarray,
+        true_positive_rate: np.ndarray,
         area_under__the_curve: float,
         best_thr: None,
         title: "",
@@ -136,8 +136,8 @@ def plot_roc(
 
 
 def roc(
-        target_labels: np.darray,
-        probabilities: np.darray,
+        target_labels: np.ndarray,
+        probabilities: np.ndarray,
         label_positive=None,
         title=""
 ):

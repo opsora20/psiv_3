@@ -51,7 +51,7 @@ def main():
     autoencoder.load_state_dict(torch.load(
         PATH_AUTOENCODER_WEIGHTS, map_location=device))
 
-    model = PatchClassifier(autoencoder, device)
+    model = PatchClassifier(autoencoder, device, 1)
 
     if PATH_LOAD_PICKLE_CLASSIFIER_CALCULATIONS != "":
         with open(PATH_LOAD_PICKLE_CLASSIFIER_CALCULATIONS, "rb") as file:
