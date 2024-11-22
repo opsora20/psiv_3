@@ -79,11 +79,12 @@ class AutoEncoderDataset(Dataset):
         image = io.imread(image_path)
         image = color.rgba2rgb(image)
         if (image.shape[0] != 256 or image.shape[1] != 256):
+            mean_pixel_value = image.mean(axis=(0, 1))
             original_height, original_width, channels = image.shape
             canvas = np.ones(
                 (target_height, target_width,
                  channels),
-                dtype=image.dtype) * 255
+                dtype=image.dtype) * mean_pixel_value
 
             y_offset = (target_height - original_height) // 2
             x_offset = (target_width - original_width) // 2
