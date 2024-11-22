@@ -412,7 +412,5 @@ class AutoEncoderCNN(nn.Module):
     def get_embeddings(self, x: Tensor) -> Tensor:
         
         x = self.encoder(x)
-        print(x.shape)
         x = x.amax(axis=(2, 3))
-        print(x.shape)
         return x

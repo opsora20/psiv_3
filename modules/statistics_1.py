@@ -44,7 +44,7 @@ class Study_embeddings():
         self.device = device
         self.is_resnet = is_resnet
         self.class_list = np.unique(list(self.dataloader.dataset.labels))
-        self.images = dataloader.dataset.images
+        self.images = dataloader.dataset.images.astype(np.float32)
         self.labels = dataloader.dataset.labels
         self.patients = dataloader.dataset.patients
 
@@ -78,9 +78,12 @@ class Study_embeddings():
     def get_patients_embeddings(self, patient_labels):
         embs = []
         pat_labels = []
-        for patient, patches, labels in self.get_images_by_group(self.images, self.labels, self.groups):
+        for patient, patches, labels in self.get_images_by_group(self.images, self.labels, self.patients):
+            patches = torch.tensor(np.array(patches))
+            if(self.device):
+                patches = patches.cuda()
             patient_emb = self.model.get_embeddings(patches).data.cpu().numpy()
-            patient_emb = torch.flatten(patient_emb)
+            patient_emb = patient_emb.flatten()
             embs.append(patient_emb)
             pat_labels.append(patient_labels[patient])
         self.embeddings = np.array(patient_emb)
@@ -90,7 +93,7 @@ class Study_embeddings():
 
 
 
-    def get_images_by_group(images, labels, groups):
+    def get_images_by_group(self, images, labels, groups):
         # Crear un diccionario para almacenar imágenes y etiquetas por grupo
         group_dict = defaultdict(lambda: {"images": [], "labels": []})
         

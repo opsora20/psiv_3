@@ -1,10 +1,7 @@
 import gc
 import torch
-import os
 
-import torch.optim as optim
 
-from torch.nn import MSELoss
 
 from datasets import AutoEncoderDataset, create_dataloaders, PatchClassifierDataset
 from autoencoder import AEConfigs, AutoEncoderCNN
@@ -12,12 +9,13 @@ from train_autoencoder import train_autoencoder
 from utils import echo
 import torchvision.models as models
 from statistics_1 import Study_embeddings
+import pandas as pd
 
 DIRECTORY_ANNOTATED = "../HelicoDataSet/CrossValidation/Annotated"
 PATH_PATCH_DIAGNOSIS = "../HelicoDataSet/HP_WSI-CoordAllAnnotatedPatches.xlsx"
 
 DIRECTORY_SAVE_MODELS = "../trained_full"
-
+PATH_PATIENT_DIAGNOSIS = "../HelicoDataSet/PatientDiagnosis.csv"
 PATH_SAVE_PICKLE_DATASET = ""
 PATH_LOAD_PICKLE_DATASET = ""
 
@@ -31,6 +29,13 @@ def main():
     None.
 
     """
+    csv_patient_diagnosis = pd.read_csv(PATH_PATIENT_DIAGNOSIS)
+    csv_patient_diagnosis["DENSITAT"][csv_patient_diagnosis["DENSITAT"] == "ALTA"] = 1
+    csv_patient_diagnosis["DENSITAT"][csv_patient_diagnosis["DENSITAT"] == "BAIXA"] = 1
+    csv_patient_diagnosis["DENSITAT"][csv_patient_diagnosis["DENSITAT"] == "NEGATIVA"] = 0
+    
+    patient_labels  = csv_patient_diagnosis.set_index('CODI')['DENSITAT'].to_dict()
+
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     echo(device)
@@ -67,6 +72,10 @@ def main():
         model.to(device)
 
         emb_class = Study_embeddings(dataloader, model, device, is_resnet = False)
+        #emb_class.get_patches_embeddings()
+        #emb_class.plot_embeddings()
+
+        emb_class.get_patients_embeddings(patient_labels)
         emb_class.plot_embeddings()
 
         # Free GPU Memory After Training
