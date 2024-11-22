@@ -182,7 +182,6 @@ class PatchClassifierDataset(Dataset):
 
         else:
             self.__read_images()
-            self.__read_images()
             if pickle_save_file != "":
                 with open(pickle_save_file, "wb") as file:
                     data = {
@@ -247,9 +246,9 @@ class PatchClassifierDataset(Dataset):
         return self.__images
 
     @property
-    def patient(self):
+    def patients(self):
         """Getter para el atributo 'patient'."""
-        return self.__patient
+        return self.__patients
 
     @property
     def labels(self):
