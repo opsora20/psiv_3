@@ -19,7 +19,6 @@ class PatchClassifier():
         self.__autoencoder = autoencoder
         self.__device = device
         self.__threshold = threshold
-        self.__threshold = threshold
 
         self.__autoencoder.to(device)
 
@@ -30,7 +29,7 @@ class PatchClassifier():
             self,
             input_image: torch.Tensor,
             output_image: torch.Tensor,
-            show: bool = False,
+            show_fred: bool = False,
     ) -> float:
         """
         Calculate the fred of the images.
@@ -64,7 +63,7 @@ class PatchClassifier():
         num = np.sum((input_hue <= 20) | (input_hue >= 160))
         den = np.sum((output_hue <= 20) | (output_hue >= 160))
 
-        if show:
+        if show_fred:
             plt.figure(figsize=(10, 5))
 
             # Primer subplot
@@ -96,11 +95,21 @@ class PatchClassifier():
         input_image.to(self.__device)
         return self.__autoencoder(input_image)
 
-    def execute(self, input_image):
-        output_image = self.encode(input_image)
-
+    def execute(self, input_image, output_image):
         fred = self.calculate_fred(input_image, output_image, False)
 
         decided_class = self.classify(fred)
 
         return decided_class
+    
+    @property
+    def threshold(self):
+        """Getter para el atributo threshold."""
+        return self.__threshold    
+    
+    @threshold.setter
+    def threshold(self, new_threshold: float):
+        """Setter para el atributo threshold."""
+        if not isinstance(new_threshold, float):
+            raise ValueError("El threshold debe de ser un float.")
+        self.__threshold = new_threshold

@@ -8,23 +8,27 @@ Created on Tue Nov 12 12:44:33 2024
 import pickle
 import torch
 import warnings
+import time
+import pandas as pd
 
 from autoencoder import AEConfigs, AutoEncoderCNN
 from datasets import PatchClassifierDataset, create_dataloaders
 
 from patch_classifier import PatchClassifier
-from train_patch_classifier import train_patch_classifier
+from train_patch_classifier import kfold_patch_classifier, mean_kfold, kfold_boxplot, kfold_patient_classifier
 
 
 
 DIRECTORY_ANNOTATED = "../HelicoDataSet/CrossValidation/Annotated"
 PATH_PATCH_DIAGNOSIS = "../HelicoDataSet/HP_WSI-CoordAllAnnotatedPatches.xlsx"
 
-PATH_AUTOENCODER_WEIGHTS = "../trained_full/modelo_config1.pth"
+PATH_PATIENT_DIAGNOSIS = "../HelicoDataSet/PatientDiagnosis.csv"
+
+PATH_AUTOENCODER_WEIGHTS = "../trained_full/modelo_config3.pth"
 
 BATCH_SIZE = 16
 
-CONFIG = '1'
+CONFIG = '3'
 
 PATH_LOAD_PICKLE_DATASET = ""
 PATH_SAVE_PICKLE_DATASET = ""
@@ -34,6 +38,7 @@ PATH_SAVE_PICKLE_CLASSIFIER_CALCULATIONS = ""
 
 FOLDS = 5
 
+THRESHOLD = 1.0009469407703822
 
 def main():
     """
@@ -68,8 +73,27 @@ def main():
             pickle_save_file=PATH_SAVE_PICKLE_DATASET,
         )
 
-        mean_thr, mean_fpr, mean_tpr = train_patch_classifier(model, dataset, device, BATCH_SIZE, FOLDS)
-    print(mean_thr, mean_fpr, mean_tpr)
+        # t0 = time.time()
+        # train_metrics, test_metrics = kfold_patch_classifier(model, dataset, device, BATCH_SIZE, FOLDS, show_roc=True)
+        # mean_train_thr, mean_train_fpr, mean_train_tpr = mean_kfold(train_metrics)
+        # tf = time.time()-t0
+        # print(f"Tiempo de ejecución: {tf:.4f} segundos")
+        
+        # kfold_boxplot(train_metrics, "Threshold", "train_metrics")
+        # mean_test_acc, mean_test_fpr, mean_test_tpr = mean_kfold(test_metrics)
+        # kfold_boxplot(test_metrics, "Accuracy", "test_metrics")
+    
+        # model.threshold = mean_train_thr
+        csv_patient_diagnosis = pd.read_csv(PATH_PATIENT_DIAGNOSIS)
+        print(csv_patient_diagnosis)
+        kfold_patient_classifier(model, dataset, device, csv_patient_diagnosis, BATCH_SIZE, FOLDS, show_roc=True)
+        
+        
+        
+        
+        
+
+
     # if PATH_SAVE_PICKLE_CLASSIFIER_CALCULATIONS != "":
     #     with open(PATH_SAVE_PICKLE_CLASSIFIER_CALCULATIONS, "wb") as file:
     #         data = {
@@ -82,3 +106,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
