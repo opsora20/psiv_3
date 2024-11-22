@@ -21,7 +21,7 @@ import pandas as pd
 
 
 def kfold_patient_classifier(model: PatchClassifier, dataset: PatchClassifierDataset, device: device,
-                           csv_patient_diagnosis: pd.DataFrame, batch_size: int, k: int, show_fred=False,
+                           df: pd.DataFrame, batch_size: int, k: int, show_fred=False,
                            show_roc=False):
     patches = dataset.images
     patches = torch.from_numpy(patches).float()
@@ -46,10 +46,38 @@ def kfold_patient_classifier(model: PatchClassifier, dataset: PatchClassifierDat
 
         print("Train_dim:",patches_train.shape[0])
         predicted_labels_train = compute_patches(model, device, patches_train, batch_size, test=True)
-        predicted_proportion = patients_positive_proportion(patients_train, predicted_labels_train)
+        predicted_proportion_train = patients_positive_proportion(patients_train, predicted_labels_train)
+        
+        df_train = df[df['CODI'].isin(predicted_proportion_train.keys())]
+        df_train['PROPORTION'] = df_train['CODI'].map(predicted_proportion_train)
+        
+        densitats_train = list(df_train['DENSITAT'])
+        proportions_train = list(df_train['PROPORTION'])
+
+        print(type(densitats_train))
+        print(type(proportions_train))
+        print(densitats_train)
+        print(proportions_train)
+        best_threshold, train_fpr, train_tpr = compute_train_roc(proportions_train, densitats_train, fold, show_roc)
 
         predicted_labels_test = compute_patches(model, device, patches_test, batch_size, test=True)
-        predicted_proportion = patients_positive_proportion(patients_test, predicted_labels_test)
+        predicted_proportion_test = patients_positive_proportion(patients_test, predicted_labels_test)
+        
+        df_test = df[df['CODI'].isin(predicted_proportion_test.keys())]
+        df_test['PROPORTION'] = df_test['CODI'].map(predicted_proportion_test)
+        
+        densitats_test = list(df_test['DENSITAT'])
+        proportions_test = list(df_test['PROPORTION'])
+        
+        pred_densitat_test = (proportions_test > best_threshold).astype(int)
+        
+        test_acc, test_fpr, test_tpr = obtain_test_metrics(densitats_test, pred_densitat_test)
+        
+        train_metrics.append((best_threshold, train_fpr, train_tpr))
+        test_metrics.append((test_acc, test_fpr, test_tpr))
+
+    return train_metrics, test_metrics
+        
         
 
 def kfold_patch_classifier(model: PatchClassifier, dataset: PatchClassifierDataset, device: device,
@@ -61,7 +89,6 @@ def kfold_patch_classifier(model: PatchClassifier, dataset: PatchClassifierDatas
     patients = dataset.patients
 
     sgkf = StratifiedGroupKFold(n_splits=k)
-    best_thresholds_list = []
     train_metrics = []
     test_metrics = []
     
@@ -240,23 +267,3 @@ def patients_positive_proportion(patients: list[str], labels: list[int]):
         positive_proportion[patient] = proportion
 
     return positive_proportion
-    
-    
-# # Lista de tags y labels
-# tags = ['B22-124', 'B22-124', 'B22-124', 'B22-124', 'B22-124', 'B22-124', 'B22-296',
-#         'B22-114', 'B22-114', 'B22-114', 'B22-114', 'B22-114', 'B22-114', 'B22-299',
-#         'B22-299', 'B22-299', 'B22-299', 'B22-156', 'B22-156', 'B22-103', 'B22-103',
-#         'B22-103', 'B22-280', 'B22-280', 'B22-280', 'B22-280', 'B22-280', 'B22-280',
-#         'B22-280', 'B22-280', 'B22-219', 'B22-219', 'B22-219', 'B22-219', 'B22-250',
-#         'B22-250', 'B22-250', 'B22-250', 'B22-250', 'B22-250', 'B22-250', 'B22-250',
-#         'B22-250', 'B22-250', 'B22-250', 'B22-250', 'B22-250', 'B22-250', 'B22-250',
-#         'B22-250', 'B22-250', 'B22-250', 'B22-250', 'B22-250', 'B22-250', 'B22-250',
-#         'B22-250', 'B22-250', 'B22-250', 'B22-250', 'B22-250', 'B22-250', 'B22-250',
-#         'B22-250', 'B22-250', 'B22-250', 'B22-250', 'B22-250', 'B22-250', 'B22-250']
-
-# labels = [1, 0, 1, 0, 1, 1, 0, 1, 0, 1, 0, 1, 1, 0, 1, 0, 1, 1, 0, 1, 0, 1, 0, 1, 0,
-#           1, 0, 1, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1,
-#           0, 1, 0, 1, 0, 1, 0, 1, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1]
-
-# positive_proportion = patients_positive_proportion(tags, labels)
-# print(positive_proportion)

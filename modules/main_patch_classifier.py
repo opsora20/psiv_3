@@ -72,7 +72,7 @@ def main():
             pickle_load_file=PATH_LOAD_PICKLE_DATASET,
             pickle_save_file=PATH_SAVE_PICKLE_DATASET,
         )
-
+        """PATCH KFOLD"""
         # t0 = time.time()
         # train_metrics, test_metrics = kfold_patch_classifier(model, dataset, device, BATCH_SIZE, FOLDS, show_roc=True)
         # mean_train_thr, mean_train_fpr, mean_train_tpr = mean_kfold(train_metrics)
@@ -84,10 +84,26 @@ def main():
         # kfold_boxplot(test_metrics, "Accuracy", "test_metrics")
     
         # model.threshold = mean_train_thr
-        csv_patient_diagnosis = pd.read_csv(PATH_PATIENT_DIAGNOSIS)
-        print(csv_patient_diagnosis)
-        kfold_patient_classifier(model, dataset, device, csv_patient_diagnosis, BATCH_SIZE, FOLDS, show_roc=True)
         
+        """PATIENT KFOLD"""
+        t0 = time.time()
+        csv_patient_diagnosis = pd.read_csv(PATH_PATIENT_DIAGNOSIS)
+        csv_patient_diagnosis["DENSITAT"][csv_patient_diagnosis["DENSITAT"] == "ALTA"] = 1
+        csv_patient_diagnosis["DENSITAT"][csv_patient_diagnosis["DENSITAT"] == "BAIXA"] = 1
+        csv_patient_diagnosis["DENSITAT"][csv_patient_diagnosis["DENSITAT"] == "NEGATIVA"] = 0
+        
+        train_metrics, test_metrics = kfold_patient_classifier(model, dataset, device, csv_patient_diagnosis, BATCH_SIZE, FOLDS, show_roc=True)
+
+        mean_train_thr, mean_train_fpr, mean_train_tpr = mean_kfold(train_metrics)
+        tf = time.time()-t0
+        print(f"Tiempo de ejecución: {tf:.4f} segundos")
+        
+        kfold_boxplot(train_metrics, "Threshold", "train_metrics")
+        mean_test_acc, mean_test_fpr, mean_test_tpr = mean_kfold(test_metrics)
+        kfold_boxplot(test_metrics, "Accuracy", "test_metrics")
+
+        print(mean_train_thr, mean_train_fpr, mean_train_tpr)
+        print(mean_test_acc, mean_test_fpr, mean_test_tpr)
         
         
         
