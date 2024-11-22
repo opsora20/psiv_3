@@ -6,7 +6,7 @@ import torch.optim as optim
 
 from torch.nn import MSELoss
 
-from Datasets import AutoEncoderDataset, create_dataloaders, PatchClassifierDataset
+from datasets import AutoEncoderDataset, create_dataloaders, PatchClassifierDataset
 from autoencoder import AEConfigs, AutoEncoderCNN
 from train_autoencoder import train_autoencoder
 from utils import echo
@@ -53,19 +53,20 @@ def main():
 
     echo('Dataset Readed')
 
-    #emb_class = Study_embeddings(dataloader, model, device)
+    #emb_class = Study_embeddings(dataloader, model, device, is_resnet = True)
     #emb_class.plot_embeddings()
 
     for config in range(1, 5):
         # CONFIG
         config = str(config)
         echo(f'Config: {config}')
-
+        
         model = AutoEncoderCNN(*AEConfigs(config))
-        print(model)
+
+        print(model.encoder)
         model.to(device)
 
-        emb_class = Study_embeddings(dataloader, model, device)
+        emb_class = Study_embeddings(dataloader, model, device, is_resnet = False)
         emb_class.plot_embeddings()
 
         # Free GPU Memory After Training
@@ -75,5 +76,7 @@ def main():
 
 
 
+
 if __name__ == "__main__":
     main()
+
