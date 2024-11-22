@@ -315,7 +315,7 @@ class AutoEncoderCNN(nn.Module):
             net_paramsDec
     ):
         super().__init__()
-
+        self.out_embeddings = inputmodule_paramsDec["num_input_channels"]
         num_input_channels = inputmodule_paramsEnc['num_input_channels']
         self.dim = net_paramsEnc['dim']
         self.upPoolMode = 'bilinear'
@@ -407,4 +407,10 @@ class AutoEncoderCNN(nn.Module):
         x = self.encoder(x)
         x = self.decoder(x)
         x = F.upsample(x, size=input_sze[2::], mode=self.upPoolMode)
+        return x
+
+    def get_embeddings(self, x: Tensor) -> Tensor:
+        
+        x = self.encoder(x)
+        x = x.amax(axis=(2, 3))
         return x

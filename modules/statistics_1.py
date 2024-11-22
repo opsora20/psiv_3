@@ -8,6 +8,7 @@ import torch
 from sklearn.neighbors import NearestNeighbors
 from matplotlib.offsetbox import OffsetImage, AnnotationBbox
 import math
+from collections import defaultdict
 
 
 
@@ -37,32 +38,75 @@ RANDOM_STATE = 42
 
 
 class Study_embeddings():
-    def __init__(self, dataloader, model, device):
+    def __init__(self, dataloader, model, device, is_resnet):
         self.dataloader = dataloader
         self.model = model
         self.device = device
+        self.is_resnet = is_resnet
         self.class_list = np.unique(list(self.dataloader.dataset.labels))
+        self.images = dataloader.dataset.images.astype(np.float32)
+        self.labels = dataloader.dataset.labels
+        self.patients = dataloader.dataset.patients
 
+        
+        
+    def get_patches_embeddings(self):
         self.extract_embeddings()
         self.umap_embeddings = self.get_umap_embeddings()
         self.centroids_array = self.calculate_class_centroids()
         
-        
-        
-        
     def extract_embeddings(self):
         with torch.no_grad():
             self.model.eval()
-            self.embeddings = np.zeros((len(self.dataloader.dataset), self.model.fc.out_features))
+            if(self.is_resnet):
+                self.embeddings = np.zeros((len(self.dataloader.dataset), self.model.fc.out_features))
+            else:
+                self.embeddings = np.zeros((len(self.dataloader.dataset), self.model.out_embeddings))
             self.labels = np.zeros(len(self.dataloader.dataset))
             k = 0
             for images, target in self.dataloader:
                 if self.device:
                     images = images.cuda()
-                self.embeddings[k:k+len(images)] = self.model(images).data.cpu().numpy()
+                if(self.is_resnet):
+                    self.embeddings[k:k+len(images)] = self.model(images).data.cpu().numpy()
+                else:
+                    self.embeddings[k:k+len(images)] = self.model.get_embeddings(images).data.cpu().numpy()
                 self.labels[k:k+len(images)] = target.numpy()
                 k += len(images)
+
+
+    def get_patients_embeddings(self, patient_labels):
+        embs = []
+        pat_labels = []
+        for patient, patches, labels in self.get_images_by_group(self.images, self.labels, self.patients):
+            patches = torch.tensor(np.array(patches))
+            if(self.device):
+                patches = patches.cuda()
+            patient_emb = self.model.get_embeddings(patches).data.cpu().numpy()
+            patient_emb = patient_emb.flatten()
+            embs.append(patient_emb)
+            pat_labels.append(patient_labels[patient])
+        self.embeddings = np.array(patient_emb)
+        self.labels = np.array(pat_labels)
+        self.umap_embeddings = self.get_umap_embeddings()
+
+
+
+
+    def get_images_by_group(self, images, labels, groups):
+        # Crear un diccionario para almacenar imágenes y etiquetas por grupo
+        group_dict = defaultdict(lambda: {"images": [], "labels": []})
         
+        # Llenar el diccionario con los datos
+        for image, label, group in zip(images, labels, groups):
+            group_dict[group]["images"].append(image)
+            group_dict[group]["labels"].append(label)
+
+        # Iterar sobre cada grupo y devolver las imágenes y etiquetas asociadas
+        for group, data in group_dict.items():
+            yield group, data["images"], data["labels"]
+
+
         
         
     def get_umap_embeddings(self):
