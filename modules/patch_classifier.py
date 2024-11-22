@@ -68,13 +68,13 @@ class PatchClassifier():
 
             # Primer subplot
             plt.subplot(1, 2, 1)  # (n_filas, n_columnas, índice)
-            plt.imshow(input_hue)
+            plt.imshow(input_image)
             plt.title('Imagen 1')
             plt.axis('off')  # Ocultar ejes
 
             # Segundo subplot
             plt.subplot(1, 2, 2)
-            plt.imshow(output_hue)
+            plt.imshow(output_image)
             plt.title('Imagen 2')
             plt.axis('off')
 
@@ -82,7 +82,7 @@ class PatchClassifier():
             plt.tight_layout()  # Ajusta el espacio entre subplots
             plt.show()
 
-        fred = den / num
+        fred = num / den
 
         return fred
 
