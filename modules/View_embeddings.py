@@ -10,9 +10,6 @@ from utils import echo
 import torchvision.models as models
 from statistics_1 import Study_embeddings
 import pandas as pd
-from AttentionUnits import Attention, GatedAttention
-from torch.nn import BCELoss
-
 
 DIRECTORY_ANNOTATED = "../HelicoDataSet/CrossValidation/Annotated"
 PATH_PATCH_DIAGNOSIS = "../HelicoDataSet/HP_WSI-CoordAllAnnotatedPatches.xlsx"
@@ -57,22 +54,29 @@ def main():
 
     batch_size = 16
 
-
-    loss_Func = BCELoss() #Sigmoid loss
+    dataloader = create_dataloaders(dataset, batch_size)
 
     echo('Dataset Readed')
+
+    #emb_class = Study_embeddings(dataloader, model, device, is_resnet = True)
+    #emb_class.plot_embeddings()
 
     for config in range(1, 5):
         # CONFIG
         config = str(config)
         echo(f'Config: {config}')
         
-        model_encoder = AutoEncoderCNN(*AEConfigs(config))
+        model = AutoEncoderCNN(*AEConfigs(config))
 
-
+        print(model.encoder)
         model.to(device)
 
+        emb_class = Study_embeddings(dataloader, model, device, is_resnet = False)
+        #emb_class.get_patches_embeddings()
+        #emb_class.plot_embeddings()
 
+        emb_class.get_patients_embeddings(patient_labels)
+        emb_class.plot_embeddings()
 
         # Free GPU Memory After Training
         gc.collect()

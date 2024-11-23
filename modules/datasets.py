@@ -13,7 +13,7 @@ import numpy as np
 
 from torch.utils.data import Dataset, DataLoader
 
-from load_datasets import load_cropped_patients, load_annotated_patients
+from load_datasets import load_cropped_patients, load_annotated_patients, load_patient_images
 
 import os
 from skimage import io, color
@@ -254,6 +254,44 @@ class PatchClassifierDataset(Dataset):
     def labels(self):
         """Getter para el atributo 'patient'."""
         return self.__labels
+
+
+class PatientDataset(Dataset):
+
+    def __init__(
+            self,
+            path_info_file: str,
+            dataset_root_directory: str,
+            transform=None,
+            read=True,
+            pickle_save_file: str = "",
+            pickle_load_file: str = "",
+    ):
+        self.__info = pd.read_csv(path_info_file)
+        self.__dataset_root_directory = dataset_root_directory
+        self.__transform = transform
+        self.__read = read
+
+
+    def load_patient(self, patient, max_images):
+        self._patient = patient
+        self.__images = load_patient_images(patient, self.__dataset_root_directory, max_images)
+
+    def __len__(self):
+        return len(self.__images)
+    
+    def __getitem__(self, idx):
+        if torch.is_tensor(idx):
+            idx = idx.tolist()
+
+        image_sample = self.__images[idx]
+
+        if (self.__transform):
+            image_sample = self.__transform(image_sample)
+
+        image_sample = image_sample.astype(np.float32)
+
+        return torch.from_numpy(image_sample)
 
 
 def create_dataloaders(class_dataset, batch):

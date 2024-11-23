@@ -6,7 +6,7 @@ Created on Tue Nov 12 12:44:33 2024
 """
 
 import numpy as np
-
+import torch
 from torch import nn as nn
 import torch.nn.functional as F
 from torch import Tensor
@@ -409,8 +409,14 @@ class AutoEncoderCNN(nn.Module):
         x = F.upsample(x, size=input_sze[2::], mode=self.upPoolMode)
         return x
 
-    def get_embeddings(self, x: Tensor) -> Tensor:
-        
+    def get_embeddings(self, x: Tensor, output_size: tuple) -> Tensor:
+        match len(output_size):
+            case 1:
+                m = nn.AdaptiveAvgPool1d(output_size)
+            case 2:
+                m = nn.AdaptiveAvgPool2d(output_size)
+            case 3:
+                m = nn.AdaptiveAvgPool3d(output_size)
         x = self.encoder(x)
-        x = x.amax(axis=(2, 3))
+        x = torch.flatten(m(x))
         return x
