@@ -125,7 +125,7 @@ def compute_all_cropped_fred(model: PatchClassifier, dataset: PatientDataset, de
         fred_list_patient = compute_patient_cropped_fred(model, device, dataset, patient, batch_size, show_fred)
         patients_fred_dict[patient] = fred_list_patient
     return patients_fred_dict
-        
+
 
 def compute_patient_cropped_fred(model: PatchClassifier, device: device, dataset: PatientDataset,
                                 patient: str, batch_size: int, show_fred):
