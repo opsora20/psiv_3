@@ -262,16 +262,11 @@ class PatientDataset(Dataset):
             self,
             path_info_file: str,
             dataset_root_directory: str,
-            transform=None,
-            read=True,
-            pickle_save_file: str = "",
-            pickle_load_file: str = "",
+            transform=None
     ):
         self.__info = pd.read_csv(path_info_file)
         self.__dataset_root_directory = dataset_root_directory
         self.__transform = transform
-        self.__read = read
-
 
     def load_patient(self, patient, max_images):
         self._patient = patient

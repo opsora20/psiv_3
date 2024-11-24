@@ -60,20 +60,25 @@ def load_cropped_patients(path_root_directory: str, info: pd.DataFrame):
 def load_patient_images(patient, root_dir, maximages = 1000):
     patient_dir = os.path.join(root_dir, patient)
     patches = []
-    for image_file in os.listdir(patient_dir):
-        if (image_file.endswith(".png")):
-            image = io.imread(os.path.join(
-                patient_dir, image_file))
-            image = color.rgba2rgb(image)
-            # echo(image.shape)
-            if (image.shape[0] != 256 or image.shape[1] != 256):
-                echo(f'- {image_file}: {image.shape}')
-            else:
-                # echo(f'+ {file_img}')
-                image = image.transpose(2, 0, 1)
-                patches.append(image)
-        if(len(patches) >= maximages):
-            break
+    for i in range(2):
+        patient_dir = patient_dir+"_"+str(i)
+        if(os.path.exists(patient_dir)):
+            for image_file in os.listdir(patient_dir):
+                if (image_file.endswith(".png")):
+                    image = io.imread(os.path.join(
+                        patient_dir, image_file))
+                    image = color.rgba2rgb(image)
+                    # echo(image.shape)
+                    if (image.shape[0] != 256 or image.shape[1] != 256):
+                        echo(f'- {image_file}: {image.shape}')
+                    else:
+                        # echo(f'+ {file_img}')
+                        image = image.transpose(2, 0, 1)
+                        patches.append(image)
+                if(len(patches) >= maximages):
+                    break
+    if(len(patches) == 0):
+        return False
     return np.array(patches)
 
 

@@ -412,7 +412,7 @@ class AutoEncoderCNN(nn.Module):
     def get_embeddings(self, x: Tensor, output_size: tuple) -> Tensor:
         match len(output_size):
             case 1:
-                m = nn.AdaptiveAvgPool1d(output_size)
+                m = nn.AdaptiveAvgPool1d(output_size[0])
             case 2:
                 m = nn.AdaptiveAvgPool2d(output_size)
             case 3:

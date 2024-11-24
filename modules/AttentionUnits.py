@@ -12,7 +12,8 @@ import torch.nn as nn
 from torch.utils.data import Dataset
 from torch.utils.data import DataLoader
 import torch.nn.functional as F
-
+from functools import reduce
+import operator
 
 #### Simple Neural Network          
 class NeuralNetwork(nn.Module):
@@ -105,3 +106,25 @@ class GatedAttention(nn.Module):
     
 
      
+def AttConfigs(Config, output_size):
+    netparamsAtt = {}
+    netparamsNN = {}
+    output_size = reduce(operator.mul, output_size, 1)
+    netparamsAtt['in_features'] = output_size
+    match Config:
+        case 1:
+            netparamsAtt['decom_space'] = output_size//2
+            netparamsAtt['ATTENTION_BRANCHES'] = 4
+
+        case 2:
+            netparamsAtt['decom_space'] = output_size//4
+            netparamsAtt['ATTENTION_BRANCHES'] = 8
+            netparamsNN
+
+        case 3:
+            netparamsAtt['decom_space'] = output_size
+            netparamsAtt['ATTENTION_BRANCHES'] = 1
+    netparamsNN['in_features'] = netparamsAtt['ATTENTION_BRANCHES']
+    netparamsNN['out_features'] = 1
+
+    return netparamsAtt, netparamsNN

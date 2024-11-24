@@ -127,6 +127,7 @@ def __train_epoch(
 
 def train_attention(
         encoder,
+        model_att,
         model,
         loss_func,
         device,
@@ -152,7 +153,8 @@ def train_attention(
         t0 = time.time()
 
         __train_epoch_attention(
-            encoder, 
+            encoder,
+            model_att, 
             model,
             loss_func,
             device,
@@ -184,6 +186,7 @@ def train_attention(
 
 def __train_epoch_attention(
             encoder, 
+            model_att,
             model,
             loss_func,
             device,
@@ -194,25 +197,32 @@ def __train_epoch_attention(
             loss_log, 
             patient_batch = 1024
 ):
-    count = 1 
-    for patient, label in patient_dict.items():
-        dataset.load_patient(patient)
-        for idx, patches in enumerate(loader):
-            patches.to(device)
-            patches = encoder(patches)
+    for phase in list(loader.keys()):
+        if phase == 'train':
+            model.train()
+        else:
+            model.eval()
 
-            preds = model(patches)
-            patient_pred = max_voting(preds)
-            loss = loss_func(patient_pred, label)
-            loss.backward()
-            if(count % 16 == 0):
-                optimizer.step()
-                optimizer.zero_grad()
-        if (idx % 16) != 0:
-            optimizer.step()
-            optimizer.zero_grad()
+        count = 1 
+        for patient, label in patient_dict.items():
+            process = dataset.load_patient(patient, patient_batch)
+            if(process):
+                for idx, patches in enumerate(loader):
+                    patches.to(device)
+                    patches = encoder.get_embeddings(patches)
 
-    return
+                    patches = model_att(patches)
+                    preds = model(patches)
+                    patient_pred = max_voting(preds)
+                    loss = loss_func(patient_pred, label)
+                    loss.backward()
+                    if(count % 16 == 0):
+                        optimizer.step()
+                        optimizer.zero_grad()
+                if (idx % 16) != 0:
+                    optimizer.step()
+                    optimizer.zero_grad()
+        return model, loss_log
 
 
 def max_voting(tensor: torch.Tensor):
