@@ -273,7 +273,7 @@ class PatientDataset(Dataset):
         self.__images = load_patient_images(patient, self.__dataset_root_directory, max_images)
 
     def __len__(self):
-        return len(self.__images)
+        return len(self.__info['CODI'])
     
     def __getitem__(self, idx):
         if torch.is_tensor(idx):
@@ -287,6 +287,11 @@ class PatientDataset(Dataset):
         image_sample = image_sample.astype(np.float32)
 
         return torch.from_numpy(image_sample)
+    
+    @property
+    def images(self):
+        """Getter para el atributo 'images'."""
+        return self.__images
 
 
 def create_dataloaders(class_dataset, batch):
