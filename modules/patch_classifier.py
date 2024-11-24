@@ -11,7 +11,8 @@ import torch
 import matplotlib.pyplot as plt
 
 from copy import deepcopy
-from cv2 import cvtColor, COLOR_RGB2HSV
+import cv2
+from cv2 import cvtColor, COLOR_RGB2HSV, COLOR_BGR2HSV
 
 
 class PatchClassifier():
@@ -54,6 +55,8 @@ class PatchClassifier():
         output_image = np.transpose(
             output_image.cpu().detach().numpy(), axes=(1, 2, 0))
 
+
+
         input_hsv = cvtColor(input_image, COLOR_RGB2HSV)
         output_hsv = cvtColor(output_image, COLOR_RGB2HSV)
 
@@ -81,7 +84,7 @@ class PatchClassifier():
             # Mostrar la figura
             plt.tight_layout()  # Ajusta el espacio entre subplots
             plt.show()
-
+                
         fred = num / den
 
         return fred

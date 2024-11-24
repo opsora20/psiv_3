@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import sys
 from patch_classifier import PatchClassifier
-from datasets import PatchClassifierDataset
+from datasets import PatchClassifierDataset, PatientDataset
 from torch import device
 import torch
 from collections import defaultdict
@@ -45,7 +45,7 @@ def kfold_patient_classifier(model: PatchClassifier, dataset: PatchClassifierDat
         patients_test = patients[test_index]
 
         print("Train_dim:",patches_train.shape[0])
-        predicted_labels_train = compute_patches(model, device, patches_train, batch_size, test=True)
+        predicted_labels_train = compute_patches(model, device, patches_train, batch_size, show_fred, test=True)
         predicted_proportion_train = patients_positive_proportion(patients_train, predicted_labels_train)
         
         df_train = df[df['CODI'].isin(predicted_proportion_train.keys())]
@@ -60,7 +60,7 @@ def kfold_patient_classifier(model: PatchClassifier, dataset: PatchClassifierDat
         print(proportions_train)
         best_threshold, train_fpr, train_tpr = compute_train_roc(proportions_train, densitats_train, fold, show_roc)
 
-        predicted_labels_test = compute_patches(model, device, patches_test, batch_size, test=True)
+        predicted_labels_test = compute_patches(model, device, patches_test, batch_size, show_fred, test=True)
         predicted_proportion_test = patients_positive_proportion(patients_test, predicted_labels_test)
         
         df_test = df[df['CODI'].isin(predicted_proportion_test.keys())]
@@ -104,11 +104,11 @@ def kfold_patch_classifier(model: PatchClassifier, dataset: PatchClassifierDatas
         
         print("Train_dim:",patches_train.shape[0])
         
-        fred_list = compute_patches(model, device, patches_train, batch_size, train=True)
+        fred_list = compute_patches(model, device, patches_train, batch_size, show_fred, train=True)
         best_threshold, train_fpr, train_tpr = compute_train_roc(fred_list, labels_train, fold, show_roc)
         print("Threshold",best_threshold, "FPR", train_fpr, "TPR", train_tpr)
         model.threshold = best_threshold
-        predicted_labels = compute_patches(model, device, patches_test, batch_size, test=True)
+        predicted_labels = compute_patches(model, device, patches_test, batch_size, show_fred, test=True)
         print("Test_dim:",patches_test.shape[0])
         test_acc, test_fpr, test_tpr = obtain_test_metrics(predicted_labels, labels_test)
         print("Accuracy",test_acc, "FPR", test_fpr, "TPR", test_tpr)
@@ -118,8 +118,29 @@ def kfold_patch_classifier(model: PatchClassifier, dataset: PatchClassifierDatas
 
     return train_metrics, test_metrics
 
+def compute_all_cropped_fred(model: PatchClassifier, dataset: PatientDataset, device: device,
+                            df_diagnosis: pd.DataFrame, batch_size: int, show_fred=False):
+    patients_fred_dict = {codi: None for codi in df_diagnosis['CODI']}
+    for patient in patients_fred_dict.keys():
+        fred_list_patient = compute_patient_cropped_fred(model, device, dataset, patient, batch_size, show_fred)
+        patients_fred_dict[patient] = fred_list_patient
+    return patients_fred_dict
+        
+
+def compute_patient_cropped_fred(model: PatchClassifier, device: device, dataset: PatientDataset,
+                                patient: str, batch_size: int, show_fred):
+    exists = dataset.load_patient(patient, max_images=10_000)
+    if exists:
+        patches = dataset.images
+        fred_list = compute_patches(model, device, patches, batch_size, show_fred, train=True)
+        print(patient)
+        print(fred_list)
+        return fred_list
+    return
     
-def compute_patches(model: PatchClassifier, device: device, patches: np.ndarray, batch_size: int, train=False, test=False):
+def compute_patches(model: PatchClassifier, device: device, patches: np.ndarray, batch_size: int,
+                    show_fred, train=False, test=False):
+    
     size = patches.shape[0]
     if train:
         fred_list = []   
@@ -140,7 +161,7 @@ def compute_patches(model: PatchClassifier, device: device, patches: np.ndarray,
                 fred_result = model.calculate_fred(
                 input_image,
                 output_image,
-                show_fred=False,
+                show_fred,
         )
                 fred_list.append(fred_result)
                 
