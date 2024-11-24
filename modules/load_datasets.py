@@ -61,12 +61,12 @@ def load_patient_images(patient, root_dir, maximages = 1000):
     patient_dir = os.path.join(root_dir, patient)
     patches = []
     for i in range(2):
-        patient_dir = patient_dir+"_"+str(i)
-        if(os.path.exists(patient_dir)):
-            for image_file in os.listdir(patient_dir):
+        patient_dir_full = patient_dir+"_"+str(i)
+        if(os.path.exists(patient_dir_full)):
+            for image_file in os.listdir(patient_dir_full):
                 if (image_file.endswith(".png")):
                     image = io.imread(os.path.join(
-                        patient_dir, image_file))
+                        patient_dir_full, image_file))
                     image = color.rgba2rgb(image)
                     # echo(image.shape)
                     if (image.shape[0] != 256 or image.shape[1] != 256):

@@ -409,7 +409,7 @@ class AutoEncoderCNN(nn.Module):
         x = F.upsample(x, size=input_sze[2::], mode=self.upPoolMode)
         return x
 
-    def get_embeddings(self, x: Tensor, output_size: tuple) -> Tensor:
+    def get_embeddings(self, x: Tensor, output_size: list) -> Tensor:
         match len(output_size):
             case 1:
                 m = nn.AdaptiveAvgPool1d(output_size[0])

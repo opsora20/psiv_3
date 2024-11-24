@@ -45,7 +45,7 @@ def main():
     echo('Reading Dataset...')
 
     dataset = PatientDataset(
-            PATH_PATCH_DIAGNOSIS,
+            PATH_PATIENT_DIAGNOSIS,
             DIRECTORY_CROPPED,
     )
 
@@ -56,11 +56,13 @@ def main():
 
     loss_func = BCELoss() #Sigmoid loss
 
-    dataloader = create_dataloaders(dataset, batch_size)
+    dataloader = {}
+
+    dataloader['train'] = create_dataloaders(dataset, batch_size)
 
     attConfig = 1
 
-    output_size = (1000)
+    output_size = [1000]
 
     for config in range(1, 5):
         # CONFIG

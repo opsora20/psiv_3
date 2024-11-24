@@ -271,7 +271,10 @@ class PatientDataset(Dataset):
     def load_patient(self, patient, max_images):
         self._patient = patient
         self.__images = load_patient_images(patient, self.__dataset_root_directory, max_images)
-
+        if(self.__images == False):
+            return False
+        else:
+            return True
     def __len__(self):
         return len(self.__info['CODI'])
     

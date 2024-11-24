@@ -60,7 +60,7 @@ def train_autoencoder(
 
         t0 = time.time()
 
-        __train_epoch(
+        model, loss_log = __train_epoch(
             model,
             loss_func,
             device,
@@ -152,7 +152,7 @@ def train_attention(
 
         t0 = time.time()
 
-        __train_epoch_attention(
+        model, loss_log = __train_epoch_attention(
             encoder,
             model_att, 
             model,
@@ -204,8 +204,10 @@ def __train_epoch_attention(
             model.eval()
 
         count = 1 
+        running_loss = 0.0
         for patient, label in patient_dict.items():
             process = dataset.load_patient(patient, patient_batch)
+            print(process)
             if(process):
                 for idx, patches in enumerate(loader):
                     patches.to(device)
@@ -216,12 +218,19 @@ def __train_epoch_attention(
                     patient_pred = max_voting(preds)
                     loss = loss_func(patient_pred, label)
                     loss.backward()
-                    if(count % 16 == 0):
-                        optimizer.step()
-                        optimizer.zero_grad()
-                if (idx % 16) != 0:
+                    running_loss += loss
+                if(count % 16 == 0):
                     optimizer.step()
                     optimizer.zero_grad()
+                count+=1
+        if (count % 16) != 0:
+            optimizer.step()
+            optimizer.zero_grad()
+
+        epoch_loss = running_loss/len(patient_dict)
+        echo(f'{phase} Loss:{epoch_loss:.4f}')
+        loss_log[phase].append(epoch_loss)
+
         return model, loss_log
 
 
