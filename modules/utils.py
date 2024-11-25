@@ -89,16 +89,9 @@ def save_pickle(object, path: str):
 
     except FileNotFoundError:
         with open(path, "wb") as archivo:
-<<<<<<< Updated upstream
-            pickle.dump(diccionario_cargado, archivo)
-        print("Archivo nuevo creado con un diccionario vacío.")
-
-
-=======
             pickle.dump(object, archivo)
         print("Archivo nuevo creado.")
         
->>>>>>> Stashed changes
 def load_pickle(path: str):
     """
     Carga los datos de un archivo pickle. 
