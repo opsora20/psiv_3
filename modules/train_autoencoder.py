@@ -106,16 +106,16 @@ def __train_epoch(
         for batch_idx, inputs in enumerate(loader[phase]):
 
             inputs = inputs.to(device)
-
-            optimizer.zero_grad()
-
             outputs = model(inputs)
 
             loss = loss_func(inputs, outputs)
             if phase == 'train':
                 loss.backward()
-                optimizer.step()
 
+                if(batch_idx % 16 == 0):
+                    optimizer.step()
+                    optimizer.zero_grad()
+                
             running_loss += loss
 
         epoch_loss = running_loss/len(loader[phase])
