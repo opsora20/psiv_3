@@ -25,11 +25,11 @@ PATH_PATCH_DIAGNOSIS = "../HelicoDataSet/HP_WSI-CoordAllAnnotatedPatches.xlsx"
 
 PATH_PATIENT_DIAGNOSIS = "../HelicoDataSet/PatientDiagnosis.csv"
 
-PATH_AUTOENCODER_WEIGHTS = "../save_models/modelo_config3.pth"
+PATH_AUTOENCODER_WEIGHTS = "../trained_full/modelo_config1.pth"
 
 BATCH_SIZE = 16
 
-CONFIG = '3'
+CONFIG = '1'
 
 PATH_LOAD_PICKLE_DATASET = ""
 PATH_SAVE_PICKLE_DATASET = ""
@@ -38,7 +38,7 @@ PATH_LOAD_PICKLE_CLASSIFIER_CALCULATIONS = ""
 PATH_SAVE_PICKLE_CLASSIFIER_CALCULATIONS = ""
 
 PATH_LOAD_PICKLE_DATASET = ""
-PATH_SAVE_PICKLE_FRED_CROPPED = "../pickle_saves/cropped_fred_dict.pkl"
+PATH_SAVE_PICKLE_FRED_CROPPED = "../pickle_saves/cropped_fred_dict_model3viejo.pkl"
 
 FOLDS = 5
 
@@ -71,29 +71,29 @@ def main():
 
     else:
 
-        # dataset_annotated = PatchClassifierDataset(
-        #     PATH_PATCH_DIAGNOSIS,
-        #     DIRECTORY_ANNOTATED,
-        #     pickle_load_file=PATH_LOAD_PICKLE_DATASET,
-        #     pickle_save_file=PATH_SAVE_PICKLE_DATASET,
-        # )
-        # """PATCH KFOLD"""
-        # t0 = time.time()
-        # train_metrics, test_metrics = kfold_patch_classifier(model, dataset_annotated, device, BATCH_SIZE, FOLDS, show_fred=True, show_roc=True)
-        # mean_train_thr, mean_train_fpr, mean_train_tpr = mean_kfold(train_metrics)
-        # tf = time.time()-t0
-        # print(f"Tiempo de ejecución: {tf:.4f} segundos")
+        dataset_annotated = PatchClassifierDataset(
+            PATH_PATCH_DIAGNOSIS,
+            DIRECTORY_ANNOTATED,
+            pickle_load_file=PATH_LOAD_PICKLE_DATASET,
+            pickle_save_file=PATH_SAVE_PICKLE_DATASET,
+        )
+        """PATCH KFOLD"""
+        t0 = time.time()
+        train_metrics, test_metrics = kfold_patch_classifier(model, dataset_annotated, device, BATCH_SIZE, FOLDS, show_fred=False, show_roc=True)
+        mean_train_thr, mean_train_fpr, mean_train_tpr = mean_kfold(train_metrics)
+        tf = time.time()-t0
+        print(f"Tiempo de ejecución: {tf:.4f} segundos")
         
-        # kfold_boxplot(train_metrics, "Threshold", "train_metrics")
-        # mean_test_acc, mean_test_fpr, mean_test_tpr = mean_kfold(test_metrics)
-        # kfold_boxplot(test_metrics, "Accuracy", "test_metrics")
+        kfold_boxplot(train_metrics, "Threshold", "train_metrics")
+        mean_test_acc, mean_test_fpr, mean_test_tpr = mean_kfold(test_metrics)
+        kfold_boxplot(test_metrics, "Accuracy", "test_metrics")
     
-        # model.threshold = mean_train_thr
+        model.threshold = mean_train_thr
 
         """PATIENT KFOLD"""
         # t0 = time.time()
 
-        
+        # csv_patient_diagnosis = load_patient_diagnosis(PATH_PATIENT_DIAGNOSIS)
         # train_metrics, test_metrics = kfold_patient_classifier(model, dataset_annotated, device, csv_patient_diagnosis, BATCH_SIZE, FOLDS, show_roc=True)
 
         # mean_train_thr, mean_train_fpr, mean_train_tpr = mean_kfold(train_metrics)
@@ -108,20 +108,17 @@ def main():
         # print(mean_test_acc, mean_test_fpr, mean_test_tpr)
         
 
-        df_patient_diagnosis = load_patient_diagnosis(PATH_PATIENT_DIAGNOSIS)
-        if PATH_SAVE_PICKLE_FRED_CROPPED != "":
-            dataset_patient_cropped = PatientDataset(
-                PATH_PATIENT_DIAGNOSIS,
-                DIRECTORY_CROPPED
-            )
-            patients_fred_dict = compute_all_cropped_fred(model, dataset_patient_cropped, device, df_patient_diagnosis, BATCH_SIZE, show_fred=False)
-            save_pickle(patients_fred_dict, PATH_SAVE_PICKLE_FRED_CROPPED)
-        else:
-            #no hacer dataset y cargar los freds
-            pass
-            
-        
-        
+        # df_patient_diagnosis = load_patient_diagnosis(PATH_PATIENT_DIAGNOSIS)
+        # if PATH_SAVE_PICKLE_FRED_CROPPED != "":
+        #     dataset_patient_cropped = PatientDataset(
+        #         PATH_PATIENT_DIAGNOSIS,
+        #         DIRECTORY_CROPPED
+        #     )
+        #     patients_fred_dict = compute_all_cropped_fred(model, dataset_patient_cropped, device, df_patient_diagnosis, BATCH_SIZE, show_fred=False)
+        #     save_pickle(patients_fred_dict, PATH_SAVE_PICKLE_FRED_CROPPED)
+        # else:
+        #     #no hacer dataset y cargar los freds
+        #     pass
         
 
 

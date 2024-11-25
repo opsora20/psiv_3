@@ -78,8 +78,6 @@ def load_patient_images(patient, root_dir, maximages = 1000):
                         patches.append(image)
                 if(len(patches) >= maximages):
                     break
-    if(len(patches) == 0):
-        return False
     return np.array(patches)
 
 
