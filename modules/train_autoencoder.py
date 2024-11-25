@@ -134,7 +134,7 @@ def train_attention(
         dataset,
         loader,
         patient_dict,
-        optimizer,
+        optimizers,
         num_epochs,
         patient_batch = 1024,
         precission: float = 0.001
@@ -152,7 +152,7 @@ def train_attention(
 
         t0 = time.time()
 
-        model, loss_log = __train_epoch_attention(
+        model_att, model, loss_log = __train_epoch_attention(
             encoder,
             model_att, 
             model,
@@ -161,7 +161,7 @@ def train_attention(
             dataset,
             loader,
             patient_dict,
-            optimizer,
+            optimizers,
             loss_log,
             patient_batch
         )
@@ -181,7 +181,7 @@ def train_attention(
 
     echo('Best val Loss: {:4f} at epoch {}'.format(best_loss, best_epoch))
     model.load_state_dict(best_model_wts)
-    return model
+    return model_att, model
 
 
 def __train_epoch_attention(
@@ -193,13 +193,14 @@ def __train_epoch_attention(
             dataset,
             loader,
             patient_dict,
-            optimizer,
+            optimizers,
             loss_log, 
             patient_batch = 1024
 ):
     for phase in list(loader.keys()):
         if phase == 'train':
             model.train()
+            model_att.train()
         else:
             model.eval()
 
@@ -220,18 +221,22 @@ def __train_epoch_attention(
                     loss.backward()
                     running_loss += loss
                 if(count % 16 == 0):
-                    optimizer.step()
-                    optimizer.zero_grad()
+                    optimizers["NN"].step()
+                    optimizers["NN"].zero_grad()
+                    optimizers["attention"].step()
+                    optimizers["attention"].zero_grad()
                 count+=1
         if (count % 16) != 0:
-            optimizer.step()
-            optimizer.zero_grad()
+            optimizers["NN"].step()
+            optimizers["NN"].zero_grad()
+            optimizers["attention"].step()
+            optimizers["attention"].zero_grad()
 
         epoch_loss = running_loss/len(patient_dict)
         echo(f'{phase} Loss:{epoch_loss:.4f}')
         loss_log[phase].append(epoch_loss)
 
-        return model, loss_log
+        return model_att, model, loss_log
 
 
 def max_voting(tensor: torch.Tensor):
