@@ -63,6 +63,7 @@ def load_patient_images(patient, root_dir, maximages = 1000):
     for i in range(2):
         patient_dir_full = patient_dir+"_"+str(i)
         if(os.path.exists(patient_dir_full)):
+            echo(f'Reading: {patient+"_"+str(i)}')
             for image_file in os.listdir(patient_dir_full):
                 if (image_file.endswith(".png")):
                     image = io.imread(os.path.join(

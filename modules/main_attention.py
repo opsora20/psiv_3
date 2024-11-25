@@ -14,6 +14,7 @@ from statistics_1 import Study_embeddings
 import pandas as pd
 from AttentionUnits import Attention, GatedAttention, NeuralNetwork, AttConfigs
 from torch.nn import BCELoss
+import os
 
 
 DIRECTORY_CROPPED = "../HelicoDataSet/CrossValidation/Cropped"
@@ -63,6 +64,7 @@ def main():
     attConfig = 1
 
     output_size = [1000]
+    optimizers = {}
 
     for config in range(1, 5):
         # CONFIG
@@ -78,9 +80,24 @@ def main():
         model_att.to(device)
         model = NeuralNetwork(netparamsNN)
         model.to(device)
-        optimizer = optim.Adam(model.parameters(), lr=0.01)
-        model = train_attention(model_encoder, model_att, model, loss_func, device, dataset, dataloader, patient_labels, optimizer, num_epochs)
-
+        optimizers["attention"] = optim.Adam(model_att.parameters(), lr = 0.001)
+        optimizers["NN"] = optim.Adam(model.parameters(), lr=0.001)
+        model_att, model = train_attention(model_encoder, model_att, model, loss_func, device, dataset, dataloader, patient_labels, optimizers, num_epochs)       
+        torch.save(
+            model_att.state_dict(),
+            os.path.join(
+                DIRECTORY_SAVE_MODELS,
+                "modelo_config" + config + "_att.pth",
+            ),
+        )
+        
+        torch.save(
+            model.state_dict(),
+            os.path.join(
+                DIRECTORY_SAVE_MODELS,
+                "modelo_config" + config + "_NN.pth",
+            ),
+        )
         # Free GPU Memory After Training
         gc.collect()
         torch.cuda.empty_cache()

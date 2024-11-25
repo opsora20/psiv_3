@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import pickle
 
+
 def echo(out: str = "", *outs: str, **kwargs):
     """
     Print to console in realtime.
@@ -69,13 +70,16 @@ def generar_boxplot(data, titulo='Boxplot', nombre_archivo=None):
         plt.savefig(nombre_archivo, dpi=300, bbox_inches='tight')
         print(f"Boxplot guardado como {nombre_archivo}")
 
+
 def load_patient_diagnosis(path_patient_diagnosis: str) -> pd.DataFrame:
     csv_patient_diagnosis = pd.read_csv(path_patient_diagnosis)
     csv_patient_diagnosis["DENSITAT"][csv_patient_diagnosis["DENSITAT"] == "ALTA"] = 1
     csv_patient_diagnosis["DENSITAT"][csv_patient_diagnosis["DENSITAT"] == "BAIXA"] = 1
-    csv_patient_diagnosis["DENSITAT"][csv_patient_diagnosis["DENSITAT"] == "NEGATIVA"] = 0
-    
+    csv_patient_diagnosis["DENSITAT"][csv_patient_diagnosis["DENSITAT"]
+                                      == "NEGATIVA"] = 0
+
     return csv_patient_diagnosis
+
 
 def save_pickle(object, path: str):
 
@@ -92,12 +96,13 @@ def save_pickle(object, path: str):
         with open(path, "wb") as archivo:
             pickle.dump(diccionario_cargado, archivo)
         print("Archivo nuevo creado con un diccionario vacío.")
-        
+
+
 def load_pickle(path: str):
     """
     Carga los datos de un archivo pickle. 
     Si el archivo no existe, devuelve un diccionario vacío.
-    
+
     :param nombre_archivo: Nombre del archivo pickle a cargar.
     :return: Diccionario cargado o un diccionario vacío si no existe.
     """
@@ -110,5 +115,6 @@ def load_pickle(path: str):
         print(f"El archivo '{path}' no existe.")
         return
     except pickle.UnpicklingError:
-        print(f"El archivo '{path}' no se puede deserializar correctamente. Verifica su contenido.")
+        print(f"El archivo '{path}' no se puede deserializar correctamente."
+              + " Verifica su contenido.")
         return
