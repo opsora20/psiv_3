@@ -12,6 +12,7 @@ from copy import deepcopy
 from utils import echo
 import torch
 
+
 def train_autoencoder(
         model,
         loss_func,
@@ -125,6 +126,7 @@ def __train_epoch(
 
         return model, loss_log
 
+
 def train_attention(
         encoder,
         model_att,
@@ -136,10 +138,10 @@ def train_attention(
         patient_dict,
         optimizers,
         num_epochs,
-        patient_batch = 1024,
+        patient_batch=1024,
         precission: float = 0.001
 ):
-    
+
     loss_log = {x: [] for x in list(loader.keys())}
 
     best_model_wts = deepcopy(model.state_dict())
@@ -154,7 +156,7 @@ def train_attention(
 
         model_att, model, loss_log = __train_epoch_attention(
             encoder,
-            model_att, 
+            model_att,
             model,
             loss_func,
             device,
@@ -179,23 +181,25 @@ def train_attention(
 
         echo("Epoch elapsed time: {:.4f}s \n".format(epoch_time))
 
+        torch.cuda.empty_cache()
+
     echo('Best val Loss: {:4f} at epoch {}'.format(best_loss, best_epoch))
     model.load_state_dict(best_model_wts)
     return model_att, model
 
 
 def __train_epoch_attention(
-            encoder, 
-            model_att,
-            model,
-            loss_func,
-            device,
-            dataset,
-            loader,
-            patient_dict,
-            optimizers,
-            loss_log, 
-            patient_batch = 1024
+    encoder,
+    model_att,
+    model,
+    loss_func,
+    device,
+    dataset,
+    loader,
+    patient_dict,
+    optimizers,
+    loss_log,
+    patient_batch=1024
 ):
     for phase in list(loader.keys()):
         if phase == 'train':
@@ -204,12 +208,12 @@ def __train_epoch_attention(
         else:
             model.eval()
 
-        count = 1 
+        count = 1
         running_loss = 0.0
         for patient, label in patient_dict.items():
             process = dataset.load_patient(patient, patient_batch)
             print(process)
-            if(process):
+            if (process):
                 for idx, patches in enumerate(loader):
                     patches.to(device)
                     patches = encoder.get_embeddings(patches)
@@ -220,12 +224,12 @@ def __train_epoch_attention(
                     loss = loss_func(patient_pred, label)
                     loss.backward()
                     running_loss += loss
-                if(count % 16 == 0):
+                if (count % 16 == 0):
                     optimizers["NN"].step()
                     optimizers["NN"].zero_grad()
                     optimizers["attention"].step()
                     optimizers["attention"].zero_grad()
-                count+=1
+                count += 1
         if (count % 16) != 0:
             optimizers["NN"].step()
             optimizers["NN"].zero_grad()
@@ -240,6 +244,6 @@ def __train_epoch_attention(
 
 
 def max_voting(tensor: torch.Tensor):
-    num_positive = torch.sum(tensor == 1)  
-    total_elements = tensor.numel() 
+    num_positive = torch.sum(tensor == 1)
+    total_elements = tensor.numel()
     return (num_positive / total_elements) * 100
