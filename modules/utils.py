@@ -115,6 +115,6 @@ def load_pickle(path: str):
         print(f"El archivo '{path}' no existe.")
         return
     except pickle.UnpicklingError:
-        print(f"El archivo '{
-              path}' no se puede deserializar correctamente. Verifica su contenido.")
+        print(f"El archivo '{path}' no se puede deserializar correctamente."
+              + " Verifica su contenido.")
         return
