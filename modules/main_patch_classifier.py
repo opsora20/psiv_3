@@ -15,8 +15,8 @@ from autoencoder import AEConfigs, AutoEncoderCNN
 from datasets import PatchClassifierDataset, create_dataloaders, PatientDataset
 
 from patch_classifier import PatchClassifier
-from train_patch_classifier import kfold_patch_classifier, mean_kfold, kfold_boxplot, kfold_patient_classifier, compute_all_cropped_fred
-from utils import load_patient_diagnosis, save_pickle
+from train_patch_classifier import mean_kfold, kfold_boxplot, kfold_classifier, compute_all_cropped_fred
+from utils import load_patient_diagnosis, save_pickle, load_pickle
 
 
 DIRECTORY_CROPPED = "../HelicoDataSet/CrossValidation/Cropped"
@@ -37,8 +37,8 @@ PATH_SAVE_PICKLE_DATASET = ""
 PATH_LOAD_PICKLE_CLASSIFIER_CALCULATIONS = ""
 PATH_SAVE_PICKLE_CLASSIFIER_CALCULATIONS = ""
 
-PATH_LOAD_PICKLE_DATASET = ""
-PATH_SAVE_PICKLE_FRED_CROPPED = "../pickle_saves/cropped_fred_dict_model3viejo.pkl"
+PATH_LOAD_PICKLE_FRED_CROPPED = "../pickle_saves/cropped_fred_dict_model1full.pkl"
+PATH_SAVE_PICKLE_FRED_CROPPED = ""
 
 FOLDS = 5
 
@@ -62,64 +62,61 @@ def main():
 
     model = PatchClassifier(autoencoder, device, 1)
 
-    if PATH_LOAD_PICKLE_CLASSIFIER_CALCULATIONS != "":
-        with open(PATH_LOAD_PICKLE_CLASSIFIER_CALCULATIONS, "rb") as file:
-            data = pickle.load(file)
 
-            fred_list = data["fred_list"]
-            target_labels = data["target_labels"]
-
-    else:
-
-        dataset_annotated = PatchClassifierDataset(
-            PATH_PATCH_DIAGNOSIS,
-            DIRECTORY_ANNOTATED,
-            pickle_load_file=PATH_LOAD_PICKLE_DATASET,
-            pickle_save_file=PATH_SAVE_PICKLE_DATASET,
-        )
-        """PATCH KFOLD"""
-        t0 = time.time()
-        train_metrics, test_metrics = kfold_patch_classifier(model, dataset_annotated, device, BATCH_SIZE, FOLDS, show_fred=False, show_roc=True)
-        mean_train_thr, mean_train_fpr, mean_train_tpr = mean_kfold(train_metrics)
-        tf = time.time()-t0
-        print(f"Tiempo de ejecución: {tf:.4f} segundos")
-        
-        kfold_boxplot(train_metrics, "Threshold", "train_metrics")
-        mean_test_acc, mean_test_fpr, mean_test_tpr = mean_kfold(test_metrics)
-        kfold_boxplot(test_metrics, "Accuracy", "test_metrics")
+    dataset_annotated = PatchClassifierDataset(
+        PATH_PATCH_DIAGNOSIS,
+        DIRECTORY_ANNOTATED,
+        pickle_load_file=PATH_LOAD_PICKLE_DATASET,
+        pickle_save_file=PATH_SAVE_PICKLE_DATASET,
+    )
+    """PATCH KFOLD"""
+    # t0 = time.time()
+    # train_metrics, test_metrics = kfold_patch_classifier(model, dataset_annotated, device, BATCH_SIZE, FOLDS, show_fred=False, show_roc=True)
+    # mean_train_thr, mean_train_fpr, mean_train_tpr = mean_kfold(train_metrics)
+    # tf = time.time()-t0
+    # print(f"Tiempo de ejecución: {tf:.4f} segundos")
     
-        model.threshold = mean_train_thr
+    # kfold_boxplot(train_metrics, "Threshold", "train_metrics")
+    # mean_test_acc, mean_test_fpr, mean_test_tpr = mean_kfold(test_metrics)
+    # kfold_boxplot(test_metrics, "Accuracy", "test_metrics")
 
-        """PATIENT KFOLD"""
-        # t0 = time.time()
+    # model.threshold = mean_train_thr
 
-        # csv_patient_diagnosis = load_patient_diagnosis(PATH_PATIENT_DIAGNOSIS)
-        # train_metrics, test_metrics = kfold_patient_classifier(model, dataset_annotated, device, csv_patient_diagnosis, BATCH_SIZE, FOLDS, show_roc=True)
+    """PATIENT KFOLD"""
+    # t0 = time.time()
 
-        # mean_train_thr, mean_train_fpr, mean_train_tpr = mean_kfold(train_metrics)
-        # tf = time.time()-t0
-        # print(f"Tiempo de ejecución: {tf:.4f} segundos")
-        
-        # kfold_boxplot(train_metrics, "Threshold", "train_metrics")
-        # mean_test_acc, mean_test_fpr, mean_test_tpr = mean_kfold(test_metrics)
-        # kfold_boxplot(test_metrics, "Accuracy", "test_metrics")
+    # csv_patient_diagnosis = load_patient_diagnosis(PATH_PATIENT_DIAGNOSIS)
+    # train_metrics, test_metrics = kfold_patient_classifier(model, dataset_annotated, device, csv_patient_diagnosis, BATCH_SIZE, FOLDS, show_roc=True)
 
-        # print(mean_train_thr, mean_train_fpr, mean_train_tpr)
-        # print(mean_test_acc, mean_test_fpr, mean_test_tpr)
-        
+    # mean_train_thr, mean_train_fpr, mean_train_tpr = mean_kfold(train_metrics)
+    # tf = time.time()-t0
+    # print(f"Tiempo de ejecución: {tf:.4f} segundos")
+    
+    # kfold_boxplot(train_metrics, "Threshold", "train_metrics")
+    # mean_test_acc, mean_test_fpr, mean_test_tpr = mean_kfold(test_metrics)
+    # kfold_boxplot(test_metrics, "Accuracy", "test_metrics")
 
-        # df_patient_diagnosis = load_patient_diagnosis(PATH_PATIENT_DIAGNOSIS)
-        # if PATH_SAVE_PICKLE_FRED_CROPPED != "":
-        #     dataset_patient_cropped = PatientDataset(
-        #         PATH_PATIENT_DIAGNOSIS,
-        #         DIRECTORY_CROPPED
-        #     )
-        #     patients_fred_dict = compute_all_cropped_fred(model, dataset_patient_cropped, device, df_patient_diagnosis, BATCH_SIZE, show_fred=False)
-        #     save_pickle(patients_fred_dict, PATH_SAVE_PICKLE_FRED_CROPPED)
-        # else:
-        #     #no hacer dataset y cargar los freds
-        #     pass
-        
+    # print(mean_train_thr, mean_train_fpr, mean_train_tpr)
+    # print(mean_test_acc, mean_test_fpr, mean_test_tpr)
+    
+
+    df_patient_diagnosis = load_patient_diagnosis(PATH_PATIENT_DIAGNOSIS)
+    if PATH_SAVE_PICKLE_FRED_CROPPED != "":
+        dataset_patient_cropped = PatientDataset(
+            PATH_PATIENT_DIAGNOSIS,
+            DIRECTORY_CROPPED
+        )
+        patients_fred_dict = compute_all_cropped_fred(model, dataset_patient_cropped, device, df_patient_diagnosis, BATCH_SIZE, show_fred=False)
+        save_pickle(patients_fred_dict, PATH_SAVE_PICKLE_FRED_CROPPED)
+    elif PATH_LOAD_PICKLE_FRED_CROPPED != "":
+        patients_fred_dict = load_pickle(PATH_LOAD_PICKLE_FRED_CROPPED)
+    
+    diccionario_filtrado = {codi: valores for codi, valores in patients_fred_dict.items() if valores is not None}
+
+    df_filtrado = df_patient_diagnosis[df_patient_diagnosis['CODI'].isin(diccionario_filtrado.keys())]
+    
+    train_patch_metrics, test_patch_metrics, train_patient_metrics, test_patient_metrics = kfold_classifier(model, dataset_annotated, device, df_filtrado, patients_fred_dict, BATCH_SIZE, FOLDS, show_fred=False, show_roc_patch=True, show_roc_patient=True)
+
 
 
     # if PATH_SAVE_PICKLE_CLASSIFIER_CALCULATIONS != "":

@@ -57,36 +57,29 @@ class PatchClassifier():
             output_image.cpu().detach().numpy(), axes=(1, 2, 0))
 
 
-        input_hsv = cvtColor(input_image, COLOR_RGB2BGR)
-        output_hsv = cvtColor(output_image, COLOR_RGB2BGR)
-        
-        input_hsv = cvtColor(input_hsv, COLOR_BGR2HSV)
-        output_hsv = cvtColor(output_hsv, COLOR_BGR2HSV)
+        input_hsv = cvtColor(input_image, COLOR_RGB2HSV)
+        output_hsv = cvtColor(output_image, COLOR_RGB2HSV)
+
         # print(input_image)
         # print(output_image)
         
         input_hue = input_hsv[:, :, 0]
         output_hue = output_hsv[:, :, 0]
+                
         
-        # print("input")
-        # print(np.min(input_hue))
-        # print(np.max(input_hue))
-        # print("output")
-        # print(np.min(output_hue))
-        # print(np.max(input_hue))
-        top = (input_hue <= 70) | (input_hue >= 350)
-        bot = (output_hue <= 70) | (output_hue >= 350)
-        mascara_input = top.astype(int)        
-        mascara_input = np.expand_dims(mascara_input, axis=-1)
-        mascara_input = np.repeat(mascara_input, 3, axis=-1)
+        # top = (input_hue <= 70) | (input_hue >= 350)
+        # bot = (output_hue <= 70) | (output_hue >= 350)
+        # mascara_input = top.astype(int)        
+        # mascara_input = np.expand_dims(mascara_input, axis=-1)
+        # mascara_input = np.repeat(mascara_input, 3, axis=-1)
         
-        mascara_output = bot.astype(int)
-        mascara_output = np.expand_dims(mascara_output, axis=-1)
-        mascara_output = np.repeat(mascara_output, 3, axis=-1)
+        # mascara_output = bot.astype(int)
+        # mascara_output = np.expand_dims(mascara_output, axis=-1)
+        # mascara_output = np.repeat(mascara_output, 3, axis=-1)
 
         
-        num = np.sum((input_hue >= 40) & (input_hue <= 320))
-        den = np.sum((output_hue >= 40) & (output_hue <= 320))
+        num = np.sum((input_hue <= 40) | (input_hue >= 320)) + 1
+        den = np.sum((output_hue <= 40) | (output_hue >= 320))
         
         
 
@@ -123,12 +116,21 @@ class PatchClassifier():
         # print("NUM",num)
         # print("DEN",den)
         
-        if num==0 and den==0:
-            fred = 0
-        else:
-            fred = den / num
 
-        return fred
+        fred = den / num
+        
+        # hist_input, bin_edges = np.histogram(input_hue, bins=50, range=(0,360), density=True)
+        # hist_output, _ = np.histogram(output_hue, bins=50, range=(0,360), density=True)
+        # plt.figure(figsize=(10, 6))
+        # plt.plot(bin_edges[:-1], hist_input, label="Input Batch Histogram", color="blue", linestyle="--")
+        # plt.plot(bin_edges[:-1], hist_output, label="Output Batch Histogram", color="orange", linestyle="-")
+        # plt.title("Hue Histogram Comparison for Batch")
+        # plt.xlabel("Hue Value")
+        # plt.ylabel("Frequency")
+        # plt.legend()
+        # plt.show()
+
+        return fred#, hist_input, hist_output, bin_edges
 
     def classify(self, fred):
         if fred > self.__threshold:
