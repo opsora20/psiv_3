@@ -227,16 +227,19 @@ def __train_epoch_attention(
             process = dataset.load_patient(patient, patient_batch)
             #loader[phase] = create_dataloaders(dataset, batch = 16) 
             if(process):
+                patient_preds = []
                 for idx, patches in enumerate(loader[phase]):
                     if(patches.shape[0]>1):
                         patches = patches.to(device)
                         patches = encoder.get_embeddings(patches, output_size)
                         Z, A = model_att(patches)
                         preds = model(Z)
-                        patient_pred = preds.mean(dim=0)
-                        loss = loss_func(patient_pred.cpu(), target)
-                        loss.backward()
-                        running_loss += loss
+                        patient_preds.append(preds)
+                patient_preds = torch.cat(patient_preds, dim=0)
+                patient_pred = preds.mean(dim=0)
+                loss = loss_func(patient_pred.cpu(), target)
+                loss.backward()
+                running_loss += loss.item()
                 if(count % 16 == 0):
                     optimizers["NN"].step()
                     optimizers["NN"].zero_grad()
