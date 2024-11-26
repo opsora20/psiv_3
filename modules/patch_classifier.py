@@ -7,12 +7,13 @@ Created on Tue Nov 12 12:44:33 2024
 
 import numpy as np
 import torch
+import sys
 
 import matplotlib.pyplot as plt
 
 from copy import deepcopy
 import cv2
-from cv2 import cvtColor, COLOR_RGB2HSV, COLOR_BGR2HSV
+from cv2 import cvtColor, COLOR_RGB2HSV, COLOR_BGR2HSV, COLOR_RGB2BGR
 
 
 class PatchClassifier():
@@ -56,18 +57,41 @@ class PatchClassifier():
             output_image.cpu().detach().numpy(), axes=(1, 2, 0))
 
 
-
-        input_hsv = cvtColor(input_image, COLOR_RGB2HSV)
-        output_hsv = cvtColor(output_image, COLOR_RGB2HSV)
-
+        input_hsv = cvtColor(input_image, COLOR_RGB2BGR)
+        output_hsv = cvtColor(output_image, COLOR_RGB2BGR)
+        
+        input_hsv = cvtColor(input_hsv, COLOR_BGR2HSV)
+        output_hsv = cvtColor(output_hsv, COLOR_BGR2HSV)
+        # print(input_image)
+        # print(output_image)
+        
         input_hue = input_hsv[:, :, 0]
         output_hue = output_hsv[:, :, 0]
+        
+        # print("input")
+        # print(np.min(input_hue))
+        # print(np.max(input_hue))
+        # print("output")
+        # print(np.min(output_hue))
+        # print(np.max(input_hue))
+        top = (input_hue <= 70) | (input_hue >= 350)
+        bot = (output_hue <= 70) | (output_hue >= 350)
+        mascara_input = top.astype(int)        
+        mascara_input = np.expand_dims(mascara_input, axis=-1)
+        mascara_input = np.repeat(mascara_input, 3, axis=-1)
+        
+        mascara_output = bot.astype(int)
+        mascara_output = np.expand_dims(mascara_output, axis=-1)
+        mascara_output = np.repeat(mascara_output, 3, axis=-1)
 
-        num = np.sum((input_hue <= 20) | (input_hue >= 160))
-        den = np.sum((output_hue <= 20) | (output_hue >= 160))
+        
+        num = np.sum((input_hue >= 40) & (input_hue <= 320))
+        den = np.sum((output_hue >= 40) & (output_hue <= 320))
+        
+        
 
         if show_fred:
-            plt.figure(figsize=(10, 5))
+            plt.figure(figsize=(20, 10))
 
             # Primer subplot
             plt.subplot(1, 2, 1)  # (n_filas, n_columnas, índice)
@@ -80,12 +104,29 @@ class PatchClassifier():
             plt.imshow(output_image)
             plt.title('Imagen 2')
             plt.axis('off')
+            
+            # # Primer subplot
+            # plt.subplot(2, 2, 3)  # (n_filas, n_columnas, índice)
+            # plt.imshow(top_int, cmap='gray')
+            # plt.title('Imagen 1')
+            # plt.axis('off')  # Ocultar ejes
+
+            # # Segundo subplot
+            # plt.subplot(2, 2, 4)
+            # plt.imshow(bot_int, cmap='gray')
+            # plt.title('Imagen 2')
+            # plt.axis('off')
 
             # Mostrar la figura
             plt.tight_layout()  # Ajusta el espacio entre subplots
             plt.show()
-                
-        fred = num / den
+        # print("NUM",num)
+        # print("DEN",den)
+        
+        if num==0 and den==0:
+            fred = 0
+        else:
+            fred = den / num
 
         return fred
 

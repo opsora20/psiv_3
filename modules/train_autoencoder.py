@@ -17,6 +17,7 @@ from datasets import create_dataloaders
 
 
 
+
 def train_autoencoder(
         model,
         loss_func,
@@ -111,16 +112,16 @@ def __train_epoch(
         for batch_idx, inputs in enumerate(loader[phase]):
 
             inputs = inputs.to(device)
-
-            optimizer.zero_grad()
-
             outputs = model(inputs)
 
             loss = loss_func(inputs, outputs)
             if phase == 'train':
                 loss.backward()
-                optimizer.step()
 
+                if(batch_idx % 16 == 0):
+                    optimizer.step()
+                    optimizer.zero_grad()
+                
             running_loss += loss
 
         epoch_loss = running_loss/len(loader[phase])
@@ -129,6 +130,7 @@ def __train_epoch(
         loss_log[phase].append(epoch_loss)
 
         return model, loss_log
+
 
 def train_attention(
         encoder,
@@ -142,10 +144,10 @@ def train_attention(
         output_size,
         optimizers,
         num_epochs,
-        patient_batch = 1024,
+        patient_batch=1024,
         precission: float = 0.001
 ):
-    
+
     loss_log = {x: [] for x in list(loader.keys())}
 
     best_model_wts = deepcopy(model.state_dict())
@@ -160,7 +162,7 @@ def train_attention(
 
         model_att, model, loss_log = __train_epoch_attention(
             encoder,
-            model_att, 
+            model_att,
             model,
             loss_func,
             device,
@@ -185,6 +187,8 @@ def train_attention(
                 break
 
         echo("Epoch elapsed time: {:.4f}s \n".format(epoch_time))
+
+        torch.cuda.empty_cache()
 
     echo('Best val Loss: {:4f} at epoch {}'.format(best_loss, best_epoch))
     model.load_state_dict(best_model_wts)
@@ -213,7 +217,7 @@ def __train_epoch_attention(
         else:
             model.eval()
 
-        count = 1 
+        count = 1
         running_loss = 0.0
         for patient, label in patient_dict.items():
             if (label == 1):
@@ -238,7 +242,7 @@ def __train_epoch_attention(
                     optimizers["NN"].zero_grad()
                     optimizers["attention"].step()
                     optimizers["attention"].zero_grad()
-                count+=1
+                count += 1
         if (count % 16) != 0:
             optimizers["NN"].step()
             optimizers["NN"].zero_grad()

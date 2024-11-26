@@ -82,22 +82,16 @@ def load_patient_diagnosis(path_patient_diagnosis: str) -> pd.DataFrame:
 
 
 def save_pickle(object, path: str):
-
     try:
-        # Intentar abrir y cargar el archivo
         with open(path, "rb") as archivo:
-            diccionario_cargado = pickle.load(archivo)
-        print("Diccionario cargado:", diccionario_cargado)
+           
+            print("El archivo ya existe")
 
     except FileNotFoundError:
-        # Si el archivo no existe, inicializar un diccionario vacío y guardarlo
-        print(f"El archivo '{path}' no existe. Creando uno nuevo...")
-        diccionario_cargado = {}
         with open(path, "wb") as archivo:
-            pickle.dump(diccionario_cargado, archivo)
-        print("Archivo nuevo creado con un diccionario vacío.")
-
-
+            pickle.dump(object, archivo)
+        print("Archivo nuevo creado.")
+        
 def load_pickle(path: str):
     """
     Carga los datos de un archivo pickle. 
@@ -115,6 +109,6 @@ def load_pickle(path: str):
         print(f"El archivo '{path}' no existe.")
         return
     except pickle.UnpicklingError:
-        print(f"El archivo '{
-              path}' no se puede deserializar correctamente. Verifica su contenido.")
+        print(f"El archivo '{path}' no se puede deserializar correctamente."
+              + " Verifica su contenido.")
         return

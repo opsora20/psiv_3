@@ -104,7 +104,10 @@ def kfold_patch_classifier(model: PatchClassifier, dataset: PatchClassifierDatas
         
         print("Train_dim:",patches_train.shape[0])
         
-        fred_list = compute_patches(model, device, patches_train, batch_size, show_fred, train=True)
+        fred_list = np.array(compute_patches(model, device, patches_train, batch_size, show_fred, train=True)).astype(np.float64)
+        fred_list = fred_list.astype(np.float64).clip(min=np.finfo(np.float64).min, max=np.finfo(np.float64).max)
+        for i in fred_list:
+            print(i)
         best_threshold, train_fpr, train_tpr = compute_train_roc(fred_list, labels_train, fold, show_roc)
         print("Threshold",best_threshold, "FPR", train_fpr, "TPR", train_tpr)
         model.threshold = best_threshold
@@ -132,6 +135,7 @@ def compute_patient_cropped_fred(model: PatchClassifier, device: device, dataset
     exists = dataset.load_patient(patient, max_images=10_000)
     if exists:
         patches = dataset.images
+        patches = torch.from_numpy(patches).float()
         fred_list = compute_patches(model, device, patches, batch_size, show_fred, train=True)
         print(patient)
         print(fred_list)

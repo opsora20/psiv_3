@@ -274,8 +274,8 @@ class PatientDataset(Dataset):
         self.__images = load_patient_images(patient, self.__dataset_root_directory, max_images)
         if(len(self.__images) == 0):
             return False
-        else:
-            return True
+        return True
+    
     def __len__(self):
         return len(self.__images)
     
