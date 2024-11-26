@@ -16,13 +16,12 @@ from torch import device
 import torch
 from collections import defaultdict
 import pandas as pd
+from utils import compare_histograms
 
 
 
-
-def kfold_patient_classifier(model: PatchClassifier, dataset: PatchClassifierDataset, device: device,
-                           df: pd.DataFrame, batch_size: int, k: int, show_fred=False,
-                           show_roc=False):
+def kfold_classifier(model: PatchClassifier, dataset: PatchClassifierDataset, device: device, df_filtrado: pd.DataFrame,
+                           patient_fred_dict: dict, batch_size: int, k: int, show_fred=False, show_roc_patch=False, show_roc_patient=False):
     patches = dataset.images
     patches = torch.from_numpy(patches).float()
     labels = dataset.labels
@@ -30,67 +29,11 @@ def kfold_patient_classifier(model: PatchClassifier, dataset: PatchClassifierDat
     patients = dataset.patients
 
     sgkf = StratifiedGroupKFold(n_splits=k)
-    best_thresholds_list = []
-    train_metrics = []
-    test_metrics = []
+    train_patch_metrics = []
+    test_patch_metrics = []
     
-    for fold, (train_index, test_index) in enumerate(sgkf.split(patches, labels, patients)):
-        
-        print("Fold:",fold)
-        patches_train = patches[train_index]
-        patches_test = patches[test_index]
-        true_labels_train = labels[train_index]
-        true_labels_test = labels[test_index]
-        patients_train = patients[train_index]
-        patients_test = patients[test_index]
-
-        print("Train_dim:",patches_train.shape[0])
-        predicted_labels_train = compute_patches(model, device, patches_train, batch_size, show_fred, test=True)
-        predicted_proportion_train = patients_positive_proportion(patients_train, predicted_labels_train)
-        
-        df_train = df[df['CODI'].isin(predicted_proportion_train.keys())]
-        df_train['PROPORTION'] = df_train['CODI'].map(predicted_proportion_train)
-        
-        densitats_train = list(df_train['DENSITAT'])
-        proportions_train = list(df_train['PROPORTION'])
-
-        print(type(densitats_train))
-        print(type(proportions_train))
-        print(densitats_train)
-        print(proportions_train)
-        best_threshold, train_fpr, train_tpr = compute_train_roc(proportions_train, densitats_train, fold, show_roc)
-
-        predicted_labels_test = compute_patches(model, device, patches_test, batch_size, show_fred, test=True)
-        predicted_proportion_test = patients_positive_proportion(patients_test, predicted_labels_test)
-        
-        df_test = df[df['CODI'].isin(predicted_proportion_test.keys())]
-        df_test['PROPORTION'] = df_test['CODI'].map(predicted_proportion_test)
-        
-        densitats_test = list(df_test['DENSITAT'])
-        proportions_test = list(df_test['PROPORTION'])
-        
-        pred_densitat_test = (proportions_test > best_threshold).astype(int)
-        
-        test_acc, test_fpr, test_tpr = obtain_test_metrics(densitats_test, pred_densitat_test)
-        
-        train_metrics.append((best_threshold, train_fpr, train_tpr))
-        test_metrics.append((test_acc, test_fpr, test_tpr))
-
-    return train_metrics, test_metrics
-        
-        
-
-def kfold_patch_classifier(model: PatchClassifier, dataset: PatchClassifierDataset, device: device,
-                           batch_size: int, k: int, show_fred=False, show_roc=False):
-    patches = dataset.images
-    patches = torch.from_numpy(patches).float()
-    labels = dataset.labels
-    labels[labels == -1] = 0
-    patients = dataset.patients
-
-    sgkf = StratifiedGroupKFold(n_splits=k)
-    train_metrics = []
-    test_metrics = []
+    train_patient_metrics = []
+    test_patient_metrics = []
     
     for fold, (train_index, test_index) in enumerate(sgkf.split(patches, labels, patients)):
         
@@ -99,28 +42,62 @@ def kfold_patch_classifier(model: PatchClassifier, dataset: PatchClassifierDatas
         patches_test = patches[test_index]
         labels_train = labels[train_index]
         labels_test = labels[test_index]
-        patients_train = labels[train_index]
-        patients_test = labels[test_index]
+        patients_train = np.unique(patients[train_index])
+        patients_test = np.unique(patients[test_index])
+
+        """PATCH THRESHOLD"""
         
-        print("Train_dim:",patches_train.shape[0])
-        
+        """TRAIN"""
         fred_list = np.array(compute_patches(model, device, patches_train, batch_size, show_fred, train=True)).astype(np.float64)
         fred_list = fred_list.astype(np.float64).clip(min=np.finfo(np.float64).min, max=np.finfo(np.float64).max)
-        for i in fred_list:
-            print(i)
-        best_threshold, train_fpr, train_tpr = compute_train_roc(fred_list, labels_train, fold, show_roc)
-        print("Threshold",best_threshold, "FPR", train_fpr, "TPR", train_tpr)
-        model.threshold = best_threshold
+
+        best_threshold_patch, train_patch_fpr, train_patch_tpr = compute_train_roc(fred_list, labels_train, str(fold)+"patch", show_roc_patch)
+        print("Threshold",best_threshold_patch, "FPR", train_patch_fpr, "TPR", train_patch_tpr)
+        model.threshold = best_threshold_patch
         predicted_labels = compute_patches(model, device, patches_test, batch_size, show_fred, test=True)
-        print("Test_dim:",patches_test.shape[0])
-        test_acc, test_fpr, test_tpr = obtain_test_metrics(predicted_labels, labels_test)
-        print("Accuracy",test_acc, "FPR", test_fpr, "TPR", test_tpr)
+
+        """TEST"""
+        test_patch_acc, test_patch_fpr, test_patch_tpr = obtain_test_metrics(predicted_labels, labels_test)
+        print("Accuracy_patch",test_patch_acc, "FPR_patch", test_patch_fpr, "TPR_patch", test_patch_tpr)
         
-        train_metrics.append((best_threshold, train_fpr, train_tpr))
-        test_metrics.append((test_acc, test_fpr, test_tpr))
+        train_patch_metrics.append((best_threshold_patch, train_patch_fpr, train_patch_tpr))
+        test_patch_metrics.append((test_patch_acc, test_patch_fpr, test_patch_tpr))
+        
+        """PATIENT THRESHOLD"""
+        
+        """TRAIN"""
+        proporciones = {codi: sum(1 for x in valores if x > best_threshold_patch) / len(valores) 
+                for codi, valores in patient_fred_dict.items() if valores is not None}
 
-    return train_metrics, test_metrics
+        # Crear una nueva columna en el DataFrame para las proporciones
+        df_filtrado['PROPORTION'] = df_filtrado['CODI'].map(proporciones)
+        
+        df_train = df_filtrado[df_filtrado['CODI'].isin(patients_train)]
+        densitats_train = list(df_train['DENSITAT'])
+        proportions_train = list(df_train['PROPORTION'])
+        
+        best_threshold_patient, train_patient_fpr, train_patient_tpr = compute_train_roc(proportions_train, densitats_train, str(fold)+"patient", show_roc_patient)
+        
+        """TEST"""
+        df_test = df_filtrado[df_filtrado['CODI'].isin(patients_test)]
+        densitats_test = list(df_test['DENSITAT'])
+        proportions_test = df_test['PROPORTION'].to_numpy()
+        densitat_test_pred = list((proportions_test > best_threshold_patient).astype(int))
+        test_patient_acc, test_patient_fpr, test_patient_tpr = obtain_test_metrics(densitats_test, densitat_test_pred)
 
+        train_patient_metrics.append((best_threshold_patient, train_patient_fpr, train_patient_tpr))
+        test_patient_metrics.append((test_patient_acc, test_patient_fpr, test_patient_tpr))       
+    plot_all(train_patch_metrics, test_patch_metrics, train_patient_metrics, test_patient_metrics)
+
+    return train_patch_metrics, test_patch_metrics, train_patient_metrics, test_patient_metrics
+
+def plot_all(train_patch_metrics, test_patch_metrics, train_patient_metrics, test_patient_metrics):
+    kfold_boxplot(train_patch_metrics, "Threshold", "train_patch_metrics")
+    kfold_boxplot(test_patch_metrics, "Accuracy", "test_patch_metrics")
+    kfold_boxplot(train_patient_metrics, "Threshold", "train_patient_metrics")
+    kfold_boxplot(test_patient_metrics, "Accuracy", "test_patient_metrics")
+    
+    
 def compute_all_cropped_fred(model: PatchClassifier, dataset: PatientDataset, device: device,
                             df_diagnosis: pd.DataFrame, batch_size: int, show_fred=False):
     patients_fred_dict = {codi: None for codi in df_diagnosis['CODI']}
@@ -142,8 +119,12 @@ def compute_patient_cropped_fred(model: PatchClassifier, device: device, dataset
         return fred_list
     return
     
+    
 def compute_patches(model: PatchClassifier, device: device, patches: np.ndarray, batch_size: int,
                     show_fred, train=False, test=False):
+    
+    # histogramas_in = []
+    # histogramas_out = []
     
     size = patches.shape[0]
     if train:
@@ -169,6 +150,9 @@ def compute_patches(model: PatchClassifier, device: device, patches: np.ndarray,
         )
                 fred_list.append(fred_result)
                 
+                # histogramas_in.append(in_hist)
+                # histogramas_out.append(out_hist)
+                
             if test:
                 decided_class = model.execute(
                 input_image,
@@ -178,7 +162,12 @@ def compute_patches(model: PatchClassifier, device: device, patches: np.ndarray,
             
         pos += batch_size
         last += batch_size
-        
+    # histogramas_in = np.array(histogramas_in).astype(np.float64)
+    # histogramas_in = np.mean(histogramas_in, axis=0)
+    # histogramas_out = np.array(histogramas_out).astype(np.float64)
+    # histogramas_out = np.mean(histogramas_out, axis=0)
+    # compare_histograms(histogramas_in, histogramas_out, bin_edges)
+
     if train:
         return fred_list
 
@@ -196,28 +185,28 @@ def obtain_test_metrics(target_labels: list[int], predicted_labels: list[int]):
     return acc, fpr, tpr
         
     
-def compute_train_roc(fred_list: list[float], target_labels: list[int], fold: int, show = False):
+def compute_train_roc(fred_list: list[float], target_labels: list[int], name, show = False):
     fpr, tpr, thr = roc_curve(target_labels, fred_list)
     if show:
-        plot_roc(fpr, tpr, fold)
+        plot_roc(fpr, tpr, name)
     best_threshold, best_fpr, best_tpr = get_best_thr(fpr, tpr, thr)
     
     return best_threshold, best_fpr, best_tpr
 
 
-def plot_roc(false_positive_rates: np.ndarray, true_positive_rates: np.ndarray, fold: int):
+def plot_roc(false_positive_rates: np.ndarray, true_positive_rates: np.ndarray, name):
     roc_auc = auc(false_positive_rates, true_positive_rates)
     # Plot the ROC curve
     plt.figure()  
     plt.plot(false_positive_rates, true_positive_rates, label='ROC curve (area = %0.2f)' % roc_auc)
     plt.plot([0, 1], [0, 1], 'k--', label='No Skill')
-    plt.xlim([0.0, 1.0])
-    plt.ylim([0.0, 1.0])
+    plt.xlim([-0.05, 1.0])
+    plt.ylim([0.0, 1.05])
     plt.xlabel('False Positive Rate')
     plt.ylabel('True Positive Rate')
     plt.title('ROC Curve for H. Pylori Patch Classification')
     plt.legend()
-    plt.savefig("Roc_curve_fold"+str(fold)+".png")
+    plt.savefig("Roc_curve_fold"+str(name)+".png")
 
 
 def get_best_thr(false_positive_rates: np.ndarray, true_positive_rates: np.ndarray, thresholds: np.ndarray) -> tuple[float, float, float]:
@@ -275,20 +264,4 @@ def kfold_boxplot(metrics: list[tuple[float]], title_1: str, file_name: str):
     plt.tight_layout()
 
     plt.savefig(file_name+'.png')
-
-
-def patients_positive_proportion(patients: list[str], labels: list[int]):
-    patients_labels = defaultdict(list)
-
-    for patient, label in zip(patients, labels):
-        patients_labels[patient].append(label)
-
-    patients_labels = dict(patients_labels)
     
-    positive_proportion = {}
-
-    for patient, label_list in patients_labels.items():
-        proportion = sum(label_list) / len(label_list) if len(label_list) > 0 else 0
-        positive_proportion[patient] = proportion
-
-    return positive_proportion

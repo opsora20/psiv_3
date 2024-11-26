@@ -8,7 +8,9 @@ import os
 import matplotlib.pyplot as plt
 import pandas as pd
 import pickle
-
+import numpy as np
+import cv2
+from cv2 import cvtColor, COLOR_RGB2HSV, COLOR_BGR2HSV, COLOR_RGB2BGR
 
 def echo(out: str = "", *outs: str, **kwargs):
     """
@@ -75,22 +77,21 @@ def load_patient_diagnosis(path_patient_diagnosis: str) -> pd.DataFrame:
     csv_patient_diagnosis = pd.read_csv(path_patient_diagnosis)
     csv_patient_diagnosis["DENSITAT"][csv_patient_diagnosis["DENSITAT"] == "ALTA"] = 1
     csv_patient_diagnosis["DENSITAT"][csv_patient_diagnosis["DENSITAT"] == "BAIXA"] = 1
-    csv_patient_diagnosis["DENSITAT"][csv_patient_diagnosis["DENSITAT"]
-                                      == "NEGATIVA"] = 0
+    csv_patient_diagnosis["DENSITAT"][csv_patient_diagnosis["DENSITAT"] == "NEGATIVA"] = 0
 
     return csv_patient_diagnosis
 
 
 def save_pickle(object, path: str):
-    try:
-        with open(path, "rb") as archivo:
+    # try:
+    #     with open(path, "rb") as archivo:
            
-            print("El archivo ya existe")
+    #         print("El archivo ya existe")
 
-    except FileNotFoundError:
-        with open(path, "wb") as archivo:
-            pickle.dump(object, archivo)
-        print("Archivo nuevo creado.")
+    # except FileNotFoundError:
+    with open(path, "wb") as archivo:
+        pickle.dump(object, archivo)
+    print("Archivo nuevo creado.")
         
 def load_pickle(path: str):
     """
@@ -112,3 +113,15 @@ def load_pickle(path: str):
         print(f"El archivo '{path}' no se puede deserializar correctamente."
               + " Verifica su contenido.")
         return
+
+
+def compare_histograms(avg_input_histogram, avg_output_histogram, bin_edges):
+
+    plt.figure(figsize=(10, 6))
+    plt.plot(bin_edges[:-1], avg_input_histogram, label="Input Batch Histogram", color="blue", linestyle="--")
+    plt.plot(bin_edges[:-1], avg_output_histogram, label="Output Batch Histogram", color="orange", linestyle="-")
+    plt.title("Hue Histogram Comparison for Batch")
+    plt.xlabel("Hue Value")
+    plt.ylabel("Frequency")
+    plt.legend()
+    plt.show()
