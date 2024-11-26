@@ -124,7 +124,7 @@ def AttConfigs(Config, output_size):
         case 3:
             netparamsAtt['decom_space'] = output_size
             netparamsAtt['ATTENTION_BRANCHES'] = 1
-    netparamsNN['in_features'] = netparamsAtt['ATTENTION_BRANCHES']
-    netparamsNN['out_features'] = 1
+    netparamsNN['in_features'] = netparamsAtt['in_features']
+    netparamsNN['out_features'] = 2
 
     return netparamsAtt, netparamsNN

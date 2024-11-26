@@ -267,16 +267,17 @@ class PatientDataset(Dataset):
         self.__info = pd.read_csv(path_info_file)
         self.__dataset_root_directory = dataset_root_directory
         self.__transform = transform
+        self.__images = [1]
 
     def load_patient(self, patient, max_images):
         self._patient = patient
         self.__images = load_patient_images(patient, self.__dataset_root_directory, max_images)
-        if len(self.__images) == 0:
+        if(len(self.__images) == 0):
             return False
         return True
     
     def __len__(self):
-        return len(self.__info['CODI'])
+        return len(self.__images)
     
     def __getitem__(self, idx):
         if torch.is_tensor(idx):

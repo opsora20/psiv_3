@@ -13,7 +13,7 @@ import torchvision.models as models
 from statistics_1 import Study_embeddings
 import pandas as pd
 from AttentionUnits import Attention, GatedAttention, NeuralNetwork, AttConfigs
-from torch.nn import BCELoss
+from torch.nn import BCEWithLogitsLoss
 import os
 
 
@@ -43,6 +43,7 @@ def main():
     patient_labels  = csv_patient_diagnosis.set_index('CODI')['DENSITAT'].to_dict()
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    echo(device)
     echo('Reading Dataset...')
 
     dataset = PatientDataset(
@@ -55,7 +56,7 @@ def main():
     num_epochs = 10
 
 
-    loss_func = BCELoss() #Sigmoid loss
+    loss_func = BCEWithLogitsLoss() #Sigmoid loss
 
     dataloader = {}
 
@@ -63,7 +64,7 @@ def main():
 
     attConfig = 1
 
-    output_size = [1000]
+    output_size = [1024]
     optimizers = {}
 
     for config in range(1, 5):
@@ -82,7 +83,8 @@ def main():
         model.to(device)
         optimizers["attention"] = optim.Adam(model_att.parameters(), lr = 0.001)
         optimizers["NN"] = optim.Adam(model.parameters(), lr=0.001)
-        model_att, model = train_attention(model_encoder, model_att, model, loss_func, device, dataset, dataloader, patient_labels, optimizers, num_epochs)       
+        print(model)
+        model_att, model = train_attention(model_encoder, model_att, model, loss_func, device, dataset, dataloader, patient_labels, output_size, optimizers, num_epochs)       
         torch.save(
             model_att.state_dict(),
             os.path.join(
