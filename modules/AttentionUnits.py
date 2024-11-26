@@ -15,6 +15,23 @@ import torch.nn.functional as F
 from functools import reduce
 import operator
 
+
+
+class Attention_NN(nn.Module):
+    def __init__(self, net_paramsAtt, net_paramsNN):
+        super().__init__()
+
+        
+        self.attention = Attention(net_paramsAtt)
+        self.NN = NeuralNetwork(net_paramsNN)
+
+
+    def forward(self, x):
+        Z, A = self.attention(x)
+        x = self.NN(Z)
+        return x
+        
+
 #### Simple Neural Network          
 class NeuralNetwork(nn.Module):
     def __init__(self, net_params):

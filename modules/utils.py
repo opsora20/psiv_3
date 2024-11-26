@@ -11,6 +11,8 @@ import pickle
 import numpy as np
 import cv2
 from cv2 import cvtColor, COLOR_RGB2HSV, COLOR_BGR2HSV, COLOR_RGB2BGR
+import torch
+
 
 def echo(out: str = "", *outs: str, **kwargs):
     """
@@ -125,3 +127,39 @@ def compare_histograms(avg_input_histogram, avg_output_histogram, bin_edges):
     plt.ylabel("Frequency")
     plt.legend()
     plt.show()
+
+
+def get_all_embeddings(patient_dict: dict, dataset, encoder, output_size, device, loader, max_images):
+    to_remove = []
+    encoder.eval()
+
+    for patient in patient_dict.keys():
+        process = dataset.load_patient(patient, max_images)
+        if process:
+            # Inicializa un tensor vacío para ir acumulando los resultados
+            patient_patches = None
+
+            for idx, patches in enumerate(loader["train"]):
+                patches = patches.to(device)
+                with torch.no_grad():  # Evita almacenar gradientes
+                    embeddings = encoder.get_embeddings(patches, output_size)
+
+                # Si es la primera iteración, inicializa patient_patches
+                if patient_patches is None:
+                    patient_patches = embeddings.cpu()
+                else:
+                    # Concatenar el nuevo batch al tensor acumulado
+                    patient_patches = torch.cat((patient_patches, embeddings.cpu()), dim=0)
+
+
+            # Guarda el tensor acumulado en el diccionario
+            patient_dict[patient]['patches'] = patient_patches
+            print(patient, patient_dict[patient]['patches'].shape)
+        else:
+            to_remove.append(patient)
+
+    # Eliminar pacientes no procesados
+    for patient in to_remove:
+        del patient_dict[patient]
+    return patient_dict
+

@@ -8,13 +8,14 @@ import torch.optim as optim
 from datasets import AutoEncoderDataset, create_dataloaders, PatchClassifierDataset, PatientDataset
 from autoencoder import AEConfigs, AutoEncoderCNN
 from train_autoencoder import train_attention
-from utils import echo
+from utils import echo, get_all_embeddings
 import torchvision.models as models
 from statistics_1 import Study_embeddings
 import pandas as pd
-from AttentionUnits import Attention, GatedAttention, NeuralNetwork, AttConfigs
+from AttentionUnits import Attention_NN, AttConfigs
 from torch.nn import BCEWithLogitsLoss
 import os
+from utils import save_pickle, load_pickle
 
 
 DIRECTORY_CROPPED = "../HelicoDataSet/CrossValidation/Cropped"
@@ -25,6 +26,7 @@ PATH_PATIENT_DIAGNOSIS = "../HelicoDataSet/PatientDiagnosis.csv"
 PATH_SAVE_PICKLE_DATASET = ""
 PATH_LOAD_PICKLE_DATASET = ""
 
+load_embeddings = False
 
 def main():
     """
@@ -36,11 +38,14 @@ def main():
 
     """
     csv_patient_diagnosis = pd.read_csv(PATH_PATIENT_DIAGNOSIS)
-    csv_patient_diagnosis["DENSITAT"][csv_patient_diagnosis["DENSITAT"] == "ALTA"] = 1
-    csv_patient_diagnosis["DENSITAT"][csv_patient_diagnosis["DENSITAT"] == "BAIXA"] = 1
-    csv_patient_diagnosis["DENSITAT"][csv_patient_diagnosis["DENSITAT"] == "NEGATIVA"] = 0
-    
-    patient_labels  = csv_patient_diagnosis.set_index('CODI')['DENSITAT'].to_dict()
+    csv_patient_diagnosis["DENSITAT"] = csv_patient_diagnosis["DENSITAT"].replace({
+    "ALTA": 1,
+    "BAIXA": 1,
+    "NEGATIVA": 0
+    })
+
+    # Crear el diccionario con la estructura solicitada
+    patient_labels = csv_patient_diagnosis.set_index('CODI').apply(lambda row: {'label': row['DENSITAT']}, axis=1).to_dict()
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     echo(device)
@@ -55,9 +60,6 @@ def main():
     batch_size = 16
     num_epochs = 10
 
-
-    loss_func = BCEWithLogitsLoss() #Sigmoid loss
-
     dataloader = {}
 
     dataloader['train'] = create_dataloaders(dataset, batch_size)
@@ -65,8 +67,36 @@ def main():
     attConfig = 1
 
     output_size = [1024]
-    optimizers = {}
 
+    model_encoder = AutoEncoderCNN(*AEConfigs('1'))
+    model_encoder.to(device)
+    # Free GPU Memory After Training
+    gc.collect()
+    torch.cuda.empty_cache()
+    config = 1
+    if(load_embeddings):
+
+        patient_labels = get_all_embeddings(patient_labels, dataset, model_encoder, output_size, device, dataloader, max_images=100000)
+        save_pickle(patient_labels, "Embeddings_dict_config"+str(config))
+    else:
+        patient_labels = load_pickle("Embeddings_dict_config"+str(config))
+    # Free GPU Memory After Training
+    gc.collect()
+    torch.cuda.empty_cache()
+
+    netparamsAtt, netparamsNN = AttConfigs(attConfig, output_size)
+
+    model = Attention_NN(netparamsAtt, netparamsNN)
+    model.to(device)
+    
+    loss_func = BCEWithLogitsLoss() #Sigmoid loss
+    optimizer = optim.Adam(model.parameters(), lr = 0.001)
+
+    model = train_attention(model, loss_func, device, patient_labels, optimizer, num_epochs)
+    gc.collect()
+    torch.cuda.empty_cache()
+
+    """
     for config in range(1, 5):
         # CONFIG
         config = str(config)
@@ -103,7 +133,7 @@ def main():
         # Free GPU Memory After Training
         gc.collect()
         torch.cuda.empty_cache()
-
+    """
 
 
 

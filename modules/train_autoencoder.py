@@ -133,46 +133,33 @@ def __train_epoch(
 
 
 def train_attention(
-        encoder,
-        model_att,
         model,
         loss_func,
         device,
-        dataset,
-        loader,
         patient_dict,
-        output_size,
-        optimizers,
+        optimizer,
         num_epochs,
-        patient_batch=1024,
         precission: float = 0.001
 ):
 
-    loss_log = {x: [] for x in list(loader.keys())}
+    loss_log = {"train": []}
 
     best_model_wts = deepcopy(model.state_dict())
     best_loss = sys.maxsize
     model.train()
-    encoder.eval()
     for epoch in range(1, num_epochs+1):
         echo(f'Epoch {epoch}/{num_epochs}')
         echo('-' * 10)
 
         t0 = time.time()
 
-        model_att, model, loss_log = __train_epoch_attention(
-            encoder,
-            model_att,
+        model, loss_log = __train_epoch_attention(
             model,
             loss_func,
             device,
-            dataset,
-            loader,
             patient_dict,
-            output_size,
-            optimizers,
-            loss_log,
-            patient_batch
+            optimizer,
+            loss_log
         )
 
         epoch_time = time.time() - t0
@@ -192,68 +179,39 @@ def train_attention(
 
     echo('Best val Loss: {:4f} at epoch {}'.format(best_loss, best_epoch))
     model.load_state_dict(best_model_wts)
-    return model_att, model
+    return model
 
 
 def __train_epoch_attention(
-            encoder, 
-            model_att,
             model,
             loss_func,
             device,
-            dataset,
-            loader,
             patient_dict,
-            output_size,
-            optimizers,
-            loss_log, 
-            patient_batch = 1024
+            optimizer,
+            loss_log
 ):
-    encoder.eval()
-    for phase in list(loader.keys()):
-        if phase == 'train':
-            model.train()
-            model_att.train()
-        else:
-            model.eval()
-
         count = 1
         running_loss = 0.0
-        for patient, label in patient_dict.items():
-            if (label == 1):
+        for patient, info in patient_dict.items():
+            if (info["label"] == 1):
                 target = torch.tensor([0.0, 1.0], dtype=torch.float32)
             else:
                 target = torch.tensor([1.0, 0.0], dtype=torch.float32)
-            process = dataset.load_patient(patient, patient_batch)
-            #loader[phase] = create_dataloaders(dataset, batch = 16) 
-            if(process):
-                patient_preds = []
-                for idx, patches in enumerate(loader[phase]):
-                    if(patches.shape[0]>1):
-                        patches = patches.to(device)
-                        patches = encoder.get_embeddings(patches, output_size)
-                        Z, A = model_att(patches)
-                        preds = model(Z)
-                        patient_preds.append(preds)
-                patient_preds = torch.cat(patient_preds, dim=0)
-                patient_pred = preds.mean(dim=0)
-                loss = loss_func(patient_pred.cpu(), target)
-                loss.backward()
-                running_loss += loss.item()
-                if(count % 16 == 0):
-                    optimizers["NN"].step()
-                    optimizers["NN"].zero_grad()
-                    optimizers["attention"].step()
-                    optimizers["attention"].zero_grad()
-                count += 1
+            patches = info["patches"].to(device)
+            patient_preds = model(patches)
+            patient_pred = patient_preds.mean(dim=0)
+            loss = loss_func(patient_pred.cpu(), target)
+            loss.backward()
+            running_loss += loss.item()
+            if(count % 16 == 0):
+                optimizer.step()
+                optimizer.zero_grad()
+            count += 1
         if (count % 16) != 0:
-            optimizers["NN"].step()
-            optimizers["NN"].zero_grad()
-            optimizers["attention"].step()
-            optimizers["attention"].zero_grad()
-
+            optimizer.step()
+            optimizer.zero_grad()
         epoch_loss = running_loss/len(patient_dict)
-        echo(f'{phase} Loss:{epoch_loss:.4f}')
-        loss_log[phase].append(epoch_loss)
+        echo(f'{"Train"} Loss:{epoch_loss:.4f}')
+        loss_log["train"].append(epoch_loss)
 
-        return model_att, model, loss_log
+        return model, loss_log
