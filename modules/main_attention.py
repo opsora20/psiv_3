@@ -67,13 +67,13 @@ def main():
     attConfig = 1
 
     output_size = [1024]
+    config = '1'
 
-    model_encoder = AutoEncoderCNN(*AEConfigs('1'))
+    model_encoder = AutoEncoderCNN(*AEConfigs(config))
     model_encoder.to(device)
     # Free GPU Memory After Training
     gc.collect()
     torch.cuda.empty_cache()
-    config = 1
     if(load_embeddings):
 
         patient_labels = get_all_embeddings(patient_labels, dataset, model_encoder, output_size, device, dataloader, max_images=100000)
@@ -91,8 +91,18 @@ def main():
     
     loss_func = BCEWithLogitsLoss() #Sigmoid loss
     optimizer = optim.Adam(model.parameters(), lr = 0.001)
+    print(len(patient_labels))
 
     model = train_attention(model, loss_func, device, patient_labels, optimizer, num_epochs)
+
+    torch.save(
+            model.state_dict(),
+            os.path.join(
+                DIRECTORY_SAVE_MODELS,
+                "modelo_config" + config + "_att.pth",
+            ),
+        )
+
     gc.collect()
     torch.cuda.empty_cache()
 

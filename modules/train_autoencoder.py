@@ -203,11 +203,11 @@ def __train_epoch_attention(
             loss = loss_func(patient_pred.cpu(), target)
             loss.backward()
             running_loss += loss.item()
-            if(count % 16 == 0):
+            if(count % 5 == 0):
                 optimizer.step()
                 optimizer.zero_grad()
             count += 1
-        if (count % 16) != 0:
+        if (count % 5) != 0:
             optimizer.step()
             optimizer.zero_grad()
         epoch_loss = running_loss/len(patient_dict)
