@@ -409,7 +409,8 @@ class AutoEncoderCNN(nn.Module):
         x = F.upsample(x, size=input_sze[2::], mode=self.upPoolMode)
         return x
 
-    def get_embeddings(self, x: Tensor, output_size: list) -> Tensor:
+    def get_embeddings(self, tensor: Tensor, output_size: list) -> Tensor:
+        """
         match len(output_size):
             case 1:
                 m = nn.AdaptiveAvgPool1d(output_size[0])
@@ -417,6 +418,13 @@ class AutoEncoderCNN(nn.Module):
                 m = nn.AdaptiveAvgPool2d(output_size)
             case 3:
                 m = nn.AdaptiveAvgPool3d(output_size)
-        x = self.encoder(x)
-        x = torch.flatten(m(x))
-        return x
+        """
+        if(len(output_size)==1):
+            aux = output_size.copy()
+            aux.append(1)
+        tensor = self.encoder(tensor)
+        aux[0] = aux[0]//(tensor.shape[1])
+        m = nn.AdaptiveAvgPool2d(aux)
+        pooled = m(tensor)
+        pooled = pooled.squeeze(3).view(tensor.size(0), -1)
+        return pooled

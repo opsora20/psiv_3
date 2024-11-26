@@ -11,6 +11,11 @@ import sys
 from copy import deepcopy
 from utils import echo
 import torch
+import torch.nn.functional as F
+from datasets import create_dataloaders
+
+
+
 
 def train_autoencoder(
         model,
@@ -134,6 +139,7 @@ def train_attention(
         dataset,
         loader,
         patient_dict,
+        output_size,
         optimizers,
         num_epochs,
         patient_batch = 1024,
@@ -161,6 +167,7 @@ def train_attention(
             dataset,
             loader,
             patient_dict,
+            output_size,
             optimizers,
             loss_log,
             patient_batch
@@ -193,10 +200,12 @@ def __train_epoch_attention(
             dataset,
             loader,
             patient_dict,
+            output_size,
             optimizers,
             loss_log, 
             patient_batch = 1024
 ):
+    encoder.eval()
     for phase in list(loader.keys()):
         if phase == 'train':
             model.train()
@@ -207,19 +216,23 @@ def __train_epoch_attention(
         count = 1 
         running_loss = 0.0
         for patient, label in patient_dict.items():
+            if (label == 1):
+                target = torch.tensor([0.0, 1.0], dtype=torch.float32)
+            else:
+                target = torch.tensor([1.0, 0.0], dtype=torch.float32)
             process = dataset.load_patient(patient, patient_batch)
-            print(process)
+            #loader[phase] = create_dataloaders(dataset, batch = 16) 
             if(process):
-                for idx, patches in enumerate(loader):
-                    patches.to(device)
-                    patches = encoder.get_embeddings(patches)
-
-                    patches = model_att(patches)
-                    preds = model(patches)
-                    patient_pred = max_voting(preds)
-                    loss = loss_func(patient_pred, label)
-                    loss.backward()
-                    running_loss += loss
+                for idx, patches in enumerate(loader[phase]):
+                    if(patches.shape[0]>1):
+                        patches = patches.to(device)
+                        patches = encoder.get_embeddings(patches, output_size)
+                        Z, A = model_att(patches)
+                        preds = model(Z)
+                        patient_pred = preds.mean(dim=0)
+                        loss = loss_func(patient_pred.cpu(), target)
+                        loss.backward()
+                        running_loss += loss
                 if(count % 16 == 0):
                     optimizers["NN"].step()
                     optimizers["NN"].zero_grad()
@@ -237,9 +250,3 @@ def __train_epoch_attention(
         loss_log[phase].append(epoch_loss)
 
         return model_att, model, loss_log
-
-
-def max_voting(tensor: torch.Tensor):
-    num_positive = torch.sum(tensor == 1)  
-    total_elements = tensor.numel() 
-    return (num_positive / total_elements) * 100
