@@ -111,7 +111,11 @@ class PatchClassifier():
         # print("NUM",num)
         # print("DEN",den)
 
-        fred = num / den
+        if num == 0 and den == 0:
+            fred = 0
+        else:
+
+            fred = num / den
 
         # hist_input, bin_edges = np.histogram(input_hue, bins=50, range=(0,360), density=True)
         # hist_output, _ = np.histogram(output_hue, bins=50, range=(0,360), density=True)
