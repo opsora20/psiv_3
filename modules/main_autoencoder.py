@@ -58,7 +58,7 @@ def main():
 
     echo('Dataset Readed')
 
-    for config in range(1, 5):
+    for config in range(1, 4):
         # CONFIG
         config = str(config)
         echo(f'Config: {config}')
