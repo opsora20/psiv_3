@@ -35,6 +35,9 @@ from AEmodels import AutoEncoderCNN
 
 
 def AEConfigs(Config):
+    net_paramsEnc = {}
+    inputmodule_paramsDec = {}
+    net_paramsDec = {}
     
     if Config=='1':
         # CONFIG1
