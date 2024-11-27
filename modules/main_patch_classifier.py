@@ -25,20 +25,20 @@ PATH_PATCH_DIAGNOSIS = "../HelicoDataSet/HP_WSI-CoordAllAnnotatedPatches.xlsx"
 
 PATH_PATIENT_DIAGNOSIS = "../HelicoDataSet/PatientDiagnosis.csv"
 
-PATH_AUTOENCODER_WEIGHTS = "../new_trained_full/modelo_config1.pth"
+PATH_AUTOENCODER_WEIGHTS = "../new_trained_full/modelo_config3.pth"
 
 BATCH_SIZE = 16
 
-CONFIG = '1'
+CONFIG = '3'
 
 PATH_LOAD_PICKLE_DATASET = ""
-PATH_SAVE_PICKLE_DATASET = ""
+PATH_SAVE_PICKLE_DATASET = "dataset_model_config_3.pckl"
 
 PATH_LOAD_PICKLE_CLASSIFIER_CALCULATIONS = ""
-PATH_SAVE_PICKLE_CLASSIFIER_CALCULATIONS = ""
+PATH_SAVE_PICKLE_CLASSIFIER_CALCULATIONS = "classifications_model_config_3.pckl"
 
 PATH_LOAD_PICKLE_FRED_CROPPED = ""
-PATH_SAVE_PICKLE_FRED_CROPPED = ""
+PATH_SAVE_PICKLE_FRED_CROPPED = "fred_model_config_3.pckl"
 
 FOLDS = 5
 
