@@ -346,6 +346,9 @@ def AEConfigs(Config):
 
     inputmodule_paramsEnc['num_input_channels'] = 3
 
+    net_paramsEnc['drop_rate'] = 2
+    net_paramsDec['drop_rate'] = 2
+
     if Config == '1':
         # CONFIG1
         net_paramsEnc['block_configs'] = [[32, 32], [64, 64]]
