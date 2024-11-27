@@ -31,7 +31,7 @@ import torch
 
 
 ## Own Functions
-from Models.AEmodels import AutoEncoderCNN
+import AutoEncoderCNN
 
 
 def AEConfigs(Config):
