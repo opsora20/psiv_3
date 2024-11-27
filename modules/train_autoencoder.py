@@ -166,9 +166,9 @@ def train_attention(
             best_model_wts = deepcopy(model.state_dict())
             best_epoch = epoch
 
-        if (epoch > 2):
-            if abs(loss_log['train'][-2] - loss_log['train'][-1]) < precission:
-                break
+        # if (epoch > 2):
+        #     if abs(loss_log['train'][-2] - loss_log['train'][-1]) < precission:
+        #         break
 
         echo("Epoch elapsed time: {:.4f}s \n".format(epoch_time))
 
