@@ -52,13 +52,13 @@ def main():
         pickle_save_file=PATH_SAVE_PICKLE_DATASET,
     )
 
-    batch_size = 16
+    batch_size = 32
 
     dataloader = create_dataloaders(data, batch_size)
 
     echo('Dataset Readed')
 
-    for config in range(1, 4):
+    for config in range(3, 4):
         # CONFIG
         config = str(config)
         echo(f'Config: {config}')
