@@ -15,9 +15,6 @@ import torch.nn.functional as F
 from datasets import create_dataloaders
 
 
-
-
-
 def train_autoencoder(
         model,
         loss_func,
@@ -118,10 +115,10 @@ def __train_epoch(
             if phase == 'train':
                 loss.backward()
 
-                if(batch_idx % 16 == 0):
+                if (batch_idx % 16 == 0):
                     optimizer.step()
                     optimizer.zero_grad()
-                
+
             running_loss += loss
 
         epoch_loss = running_loss/len(loader[phase])
@@ -183,35 +180,35 @@ def train_attention(
 
 
 def __train_epoch_attention(
-            model,
-            loss_func,
-            device,
-            patient_dict,
-            optimizer,
-            loss_log
+    model,
+    loss_func,
+    device,
+    patient_dict,
+    optimizer,
+    loss_log
 ):
-        count = 1
-        running_loss = 0.0
-        for patient, info in patient_dict.items():
-            if (info["label"] == 1):
-                target = torch.tensor([0.0, 1.0], dtype=torch.float32)
-            else:
-                target = torch.tensor([1.0, 0.0], dtype=torch.float32)
-            patches = info["patches"].to(device)
-            patient_preds = model(patches)
-            patient_pred = patient_preds.mean(dim=0)
-            loss = loss_func(patient_pred.cpu(), target)
-            loss.backward()
-            running_loss += loss.item()
-            if(count % 5 == 0):
-                optimizer.step()
-                optimizer.zero_grad()
-            count += 1
-        if (count % 5) != 0:
+    count = 1
+    running_loss = 0.0
+    for patient, info in patient_dict.items():
+        if (info["label"] == 1):
+            target = torch.tensor([0.0, 1.0], dtype=torch.float32)
+        else:
+            target = torch.tensor([1.0, 0.0], dtype=torch.float32)
+        patches = info["patches"].to(device)
+        patient_preds = model(patches)
+        patient_pred = patient_preds.mean(dim=0)
+        loss = loss_func(patient_pred.cpu(), target)
+        loss.backward()
+        running_loss += loss.item()
+        if (count % 5 == 0):
             optimizer.step()
             optimizer.zero_grad()
-        epoch_loss = running_loss/len(patient_dict)
-        echo(f'{"Train"} Loss:{epoch_loss:.4f}')
-        loss_log["train"].append(epoch_loss)
+        count += 1
+    if (count % 5) != 0:
+        optimizer.step()
+        optimizer.zero_grad()
+    epoch_loss = running_loss/len(patient_dict)
+    echo(f'{"Train"} Loss:{epoch_loss:.4f}')
+    loss_log["train"].append(epoch_loss)
 
-        return model, loss_log
+    return model, loss_log
