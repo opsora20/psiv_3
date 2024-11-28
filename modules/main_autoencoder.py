@@ -25,7 +25,7 @@ PATH_PATIENT_DIAGNOSIS = "../../maed/HelicoDataSet/PatientDiagnosis.csv"
 
 DIRECTORY_SAVE_MODELS = "../models"
 
-PATH_SAVE_PICKLE_DATASET = ""
+PATH_SAVE_PICKLE_DATASET = "../sd.pckl"
 PATH_LOAD_PICKLE_DATASET = ""
 
 
@@ -47,7 +47,7 @@ def main():
     data = AutoEncoderDataset(
         PATH_PATIENT_DIAGNOSIS,
         DIRECTORY_CROPPED,
-        read=False,
+        read=True,
         pickle_load_file=PATH_LOAD_PICKLE_DATASET,
         pickle_save_file=PATH_SAVE_PICKLE_DATASET,
     )

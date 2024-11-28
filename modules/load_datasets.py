@@ -13,6 +13,8 @@ import pandas as pd
 from skimage import io, color
 from utils import echo
 
+import cv2
+
 
 def load_cropped_patients(path_root_directory: str, info: pd.DataFrame):
     """
@@ -51,18 +53,20 @@ def load_cropped_patients(path_root_directory: str, info: pd.DataFrame):
                         echo(f'- {image_file}: {image.shape}')
                     else:
                         # echo(f'+ {file_img}')
+                        image = cv2.resize(
+                            image, (28, 28), interpolation=cv2.INTER_AREA)
                         image = image.transpose(2, 0, 1)
                         imgs.append(image)
 
     return np.array(imgs)
 
 
-def load_patient_images(patient, root_dir, maximages = 1000):
+def load_patient_images(patient, root_dir, maximages=1000):
     patient_dir = os.path.join(root_dir, patient)
     patches = []
     for i in range(2):
         patient_dir_full = patient_dir+"_"+str(i)
-        if(os.path.exists(patient_dir_full)):
+        if (os.path.exists(patient_dir_full)):
             echo(f'Reading: {patient+"_"+str(i)}')
             for image_file in os.listdir(patient_dir_full):
                 if (image_file.endswith(".png")):
@@ -76,7 +80,7 @@ def load_patient_images(patient, root_dir, maximages = 1000):
                         # echo(f'+ {file_img}')
                         image = image.transpose(2, 0, 1)
                         patches.append(image)
-                if(len(patches) >= maximages):
+                if (len(patches) >= maximages):
                     break
     return np.array(patches)
 

@@ -167,3 +167,6 @@ cython_debug/
 
 # Ignored folders
 HelicoDataSet/
+*.pth
+*.pckl
+*.png
