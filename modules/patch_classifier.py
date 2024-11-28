@@ -56,27 +56,32 @@ class PatchClassifier():
         output_image = np.transpose(
             output_image.cpu().detach().numpy(), axes=(1, 2, 0))
 
+
         input_hsv = cvtColor(input_image, COLOR_RGB2HSV)
         output_hsv = cvtColor(output_image, COLOR_RGB2HSV)
 
         # print(input_image)
         # print(output_image)
-
+        
         input_hue = input_hsv[:, :, 0]
         output_hue = output_hsv[:, :, 0]
-
+                
+        
         # top = (input_hue <= 70) | (input_hue >= 350)
         # bot = (output_hue <= 70) | (output_hue >= 350)
-        # mascara_input = top.astype(int)
+        # mascara_input = top.astype(int)        
         # mascara_input = np.expand_dims(mascara_input, axis=-1)
         # mascara_input = np.repeat(mascara_input, 3, axis=-1)
-
+        
         # mascara_output = bot.astype(int)
         # mascara_output = np.expand_dims(mascara_output, axis=-1)
         # mascara_output = np.repeat(mascara_output, 3, axis=-1)
 
+        
         num = np.sum((input_hue <= 40) | (input_hue >= 320))
-        den = np.sum((output_hue <= 40) | (output_hue >= 320))
+        den = np.sum((output_hue <= 40) | (output_hue >= 320)) + 1
+        
+        
 
         if show_fred:
             plt.figure(figsize=(20, 10))
@@ -92,7 +97,7 @@ class PatchClassifier():
             plt.imshow(output_image)
             plt.title('Imagen 2')
             plt.axis('off')
-
+            
             # # Primer subplot
             # plt.subplot(2, 2, 3)  # (n_filas, n_columnas, índice)
             # plt.imshow(top_int, cmap='gray')
@@ -108,15 +113,10 @@ class PatchClassifier():
             # Mostrar la figura
             plt.tight_layout()  # Ajusta el espacio entre subplots
             plt.show()
-        # print("NUM",num)
-        # print("DEN",den)
 
-        if num == 0 and den == 0:
-            fred = 0
-        else:
 
-            fred = num / den
-
+        fred = num / den
+        
         # hist_input, bin_edges = np.histogram(input_hue, bins=50, range=(0,360), density=True)
         # hist_output, _ = np.histogram(output_hue, bins=50, range=(0,360), density=True)
         # plt.figure(figsize=(10, 6))
@@ -128,7 +128,7 @@ class PatchClassifier():
         # plt.legend()
         # plt.show()
 
-        return fred  # , hist_input, hist_output, bin_edges
+        return fred#, hist_input, hist_output, bin_edges
 
     def classify(self, fred):
         if fred > self.__threshold:
@@ -145,12 +145,12 @@ class PatchClassifier():
         decided_class = self.classify(fred)
 
         return decided_class
-
+    
     @property
     def threshold(self):
         """Getter para el atributo threshold."""
-        return self.__threshold
-
+        return self.__threshold    
+    
     @threshold.setter
     def threshold(self, new_threshold: float):
         """Setter para el atributo threshold."""

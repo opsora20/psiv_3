@@ -129,7 +129,7 @@ def compare_histograms(avg_input_histogram, avg_output_histogram, bin_edges):
     plt.show()
 
 
-def get_all_embeddings(patient_dict: dict, dataset, encoder, output_size, device, loader, max_images):
+def get_all_embeddings(patient_dict: dict, dataset, encoder, output_size, device, loader, max_images, is_resnet = False):
     to_remove = []
     encoder.eval()
 
@@ -142,7 +142,10 @@ def get_all_embeddings(patient_dict: dict, dataset, encoder, output_size, device
             for idx, patches in enumerate(loader["train"]):
                 patches = patches.to(device)
                 with torch.no_grad():  # Evita almacenar gradientes
-                    embeddings = encoder.get_embeddings(patches, output_size)
+                    if(is_resnet == False):
+                        embeddings = encoder.get_embeddings(patches, output_size)
+                    else:
+                        embeddings = encoder(patches)
 
                 # Si es la primera iteración, inicializa patient_patches
                 if patient_patches is None:

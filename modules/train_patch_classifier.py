@@ -19,9 +19,9 @@ import pandas as pd
 from utils import compare_histograms
 
 
-
 def kfold_classifier(model: PatchClassifier, dataset: PatchClassifierDataset, device: device, df_filtrado: pd.DataFrame,
-                           patient_fred_dict: dict, batch_size: int, k: int, show_fred=False, show_roc_patch=False, show_roc_patient=False):
+                           patient_fred_dict: dict, batch_size: int, k: int, config: str, show_fred=False, show_roc_patch=False,
+                           show_roc_patient=False):
     patches = dataset.images
     patches = torch.from_numpy(patches).float()
     labels = dataset.labels
@@ -34,6 +34,8 @@ def kfold_classifier(model: PatchClassifier, dataset: PatchClassifierDataset, de
     
     train_patient_metrics = []
     test_patient_metrics = []
+    
+    print("CONFIG: "+config+"\n\n")
     
     for fold, (train_index, test_index) in enumerate(sgkf.split(patches, labels, patients)):
         
@@ -51,7 +53,7 @@ def kfold_classifier(model: PatchClassifier, dataset: PatchClassifierDataset, de
         fred_list = np.array(compute_patches(model, device, patches_train, batch_size, show_fred, train=True)).astype(np.float64)
         fred_list = fred_list.astype(np.float64).clip(min=np.finfo(np.float64).min, max=np.finfo(np.float64).max)
 
-        best_threshold_patch, train_patch_fpr, train_patch_tpr = compute_train_roc(fred_list, labels_train, str(fold)+"patch", show_roc_patch)
+        best_threshold_patch, train_patch_fpr, train_patch_tpr = compute_train_roc(fred_list, labels_train, str(fold)+"_patch", config, show_roc_patch)
         print("Threshold",best_threshold_patch, "FPR", train_patch_fpr, "TPR", train_patch_tpr)
         model.threshold = best_threshold_patch
         predicted_labels = compute_patches(model, device, patches_test, batch_size, show_fred, test=True)
@@ -76,7 +78,7 @@ def kfold_classifier(model: PatchClassifier, dataset: PatchClassifierDataset, de
         densitats_train = list(df_train['DENSITAT'])
         proportions_train = list(df_train['PROPORTION'])
         
-        best_threshold_patient, train_patient_fpr, train_patient_tpr = compute_train_roc(proportions_train, densitats_train, str(fold)+"patient", show_roc_patient)
+        best_threshold_patient, train_patient_fpr, train_patient_tpr = compute_train_roc(proportions_train, densitats_train, str(fold)+"_patient", config, show_roc_patient)
         
         """TEST"""
         df_test = df_filtrado[df_filtrado['CODI'].isin(patients_test)]
@@ -87,15 +89,15 @@ def kfold_classifier(model: PatchClassifier, dataset: PatchClassifierDataset, de
 
         train_patient_metrics.append((best_threshold_patient, train_patient_fpr, train_patient_tpr))
         test_patient_metrics.append((test_patient_acc, test_patient_fpr, test_patient_tpr))       
-    plot_all(train_patch_metrics, test_patch_metrics, train_patient_metrics, test_patient_metrics)
+    plot_all(train_patch_metrics, test_patch_metrics, train_patient_metrics, test_patient_metrics, config)
 
     return train_patch_metrics, test_patch_metrics, train_patient_metrics, test_patient_metrics
 
-def plot_all(train_patch_metrics, test_patch_metrics, train_patient_metrics, test_patient_metrics):
-    kfold_boxplot(train_patch_metrics, "Threshold", "train_patch_metrics")
-    kfold_boxplot(test_patch_metrics, "Accuracy", "test_patch_metrics")
-    kfold_boxplot(train_patient_metrics, "Threshold", "train_patient_metrics")
-    kfold_boxplot(test_patient_metrics, "Accuracy", "test_patient_metrics")
+def plot_all(train_patch_metrics, test_patch_metrics, train_patient_metrics, test_patient_metrics, config):
+    kfold_boxplot(train_patch_metrics, "Threshold", "train_patch_metrics", config)
+    kfold_boxplot(test_patch_metrics, "Accuracy", "test_patch_metrics", config)
+    kfold_boxplot(train_patient_metrics, "Threshold", "train_patient_metrics", config)
+    kfold_boxplot(test_patient_metrics, "Accuracy", "test_patient_metrics", config)
     
     
 def compute_all_cropped_fred(model: PatchClassifier, dataset: PatientDataset, device: device,
@@ -185,16 +187,16 @@ def obtain_test_metrics(target_labels: list[int], predicted_labels: list[int]):
     return acc, fpr, tpr
         
     
-def compute_train_roc(fred_list: list[float], target_labels: list[int], name, show = False):
+def compute_train_roc(fred_list: list[float], target_labels: list[int], name, config, show = False):
     fpr, tpr, thr = roc_curve(target_labels, fred_list)
     if show:
-        plot_roc(fpr, tpr, name)
+        plot_roc(fpr, tpr, name, config)
     best_threshold, best_fpr, best_tpr = get_best_thr(fpr, tpr, thr)
     
     return best_threshold, best_fpr, best_tpr
 
 
-def plot_roc(false_positive_rates: np.ndarray, true_positive_rates: np.ndarray, name):
+def plot_roc(false_positive_rates: np.ndarray, true_positive_rates: np.ndarray, name, config):
     roc_auc = auc(false_positive_rates, true_positive_rates)
     # Plot the ROC curve
     plt.figure()  
@@ -206,7 +208,7 @@ def plot_roc(false_positive_rates: np.ndarray, true_positive_rates: np.ndarray, 
     plt.ylabel('True Positive Rate')
     plt.title('ROC Curve for H. Pylori Patch Classification')
     plt.legend()
-    plt.savefig("Roc_curve_fold"+str(name)+".png")
+    plt.savefig("Roc_curve_fold_"+str(name)+"_config_"+config+".png")
 
 
 def get_best_thr(false_positive_rates: np.ndarray, true_positive_rates: np.ndarray, thresholds: np.ndarray) -> tuple[float, float, float]:
@@ -245,7 +247,7 @@ def mean_kfold(metrics: list[tuple[float]]) -> tuple[float, float, float]:
     return mean_1, mean_2, mean_3
 
 
-def kfold_boxplot(metrics: list[tuple[float]], title_1: str, file_name: str):
+def kfold_boxplot(metrics: list[tuple[float]], title_1: str, file_name: str, config: str):
     metric_1, metric_2, metric_3 = zip(*metrics)
     fig, axes = plt.subplots(1, 3, figsize=(15, 5))  # 1 fila, 3 columnas
 
@@ -263,5 +265,5 @@ def kfold_boxplot(metrics: list[tuple[float]], title_1: str, file_name: str):
     # Ajustar el espacio entre subplots
     plt.tight_layout()
 
-    plt.savefig(file_name+'.png')
+    plt.savefig(file_name+"_config_"+config+'.png')
     

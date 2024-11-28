@@ -144,7 +144,7 @@ def train_attention(
         patient_dict,
         optimizer,
         num_epochs,
-        precission: float = 0.001
+        precission: float = 0
 ):
 
     loss_log = {"train": []}
@@ -184,7 +184,7 @@ def train_attention(
 
     echo('Best val Loss: {:4f} at epoch {}'.format(best_loss, best_epoch))
     model.load_state_dict(best_model_wts)
-    return model
+    return model, loss_log
 
 
 def __train_epoch_attention(
@@ -204,8 +204,9 @@ def __train_epoch_attention(
             target = torch.tensor([1.0, 0.0], dtype=torch.float32)
         patches = info["patches"].to(device)
         patient_preds = model(patches)
-        patient_pred = patient_preds.mean(dim=0)
-        loss = loss_func(patient_pred.cpu(), target)
+        #patient_pred = patient_preds.mean(dim=0)
+        patient_preds = patient_preds.reshape(2)
+        loss = loss_func(patient_preds, target.to(device))
         loss.backward()
         running_loss += loss.item()
         if (count % 5 == 0):
