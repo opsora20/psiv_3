@@ -13,6 +13,10 @@ from utils import echo
 import torch
 import torch.nn.functional as F
 from datasets import create_dataloaders
+import os
+
+
+DIRECTORY_SAVE_MODELS = "../models"
 
 
 def train_autoencoder(
@@ -79,9 +83,13 @@ def train_autoencoder(
             best_model_wts = deepcopy(model.state_dict())
             best_epoch = epoch
 
-        if (epoch > 2):
-            if abs(loss_log['train'][-2] - loss_log['train'][-1]) < precission:
-                break
+        torch.save(
+            model.state_dict(),
+            os.path.join(
+                DIRECTORY_SAVE_MODELS,
+                "modelo_config" + '3' + 'epoch'+str(epoch)+".pth",
+            ),
+        )
 
         echo("Epoch elapsed time: {:.4f}s \n".format(epoch_time))
 

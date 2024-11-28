@@ -73,7 +73,7 @@ def main():
         loader["train"] = dataloader
         loss_func = MSELoss()
         optimizer = optim.Adam(model.parameters(), lr=0.001)
-        num_epochs = 10
+        num_epochs = 30
 
         autoencoder = train_autoencoder(
             model,
