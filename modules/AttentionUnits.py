@@ -18,16 +18,19 @@ import operator
 
 
 class Attention_NN(nn.Module):
-    def __init__(self, net_paramsAtt, net_paramsNN):
+    def __init__(self, net_paramsAtt, net_paramsNN, gated = False):
         super().__init__()
 
-        
-        self.attention = Attention(net_paramsAtt)
+        if(gated):
+            self.attention = GatedAttention(net_paramsAtt)
+        else:
+            self.attention = Attention(net_paramsAtt)
         self.NN = NeuralNetwork(net_paramsNN)
 
 
     def forward(self, x):
         Z, A = self.attention(x)
+        Z = Z.view(-1, Z.shape[0]*Z.shape[1]) 
         x = self.NN(Z)
         return x
         
@@ -130,18 +133,18 @@ def AttConfigs(Config, output_size):
     netparamsAtt['in_features'] = output_size
     match Config:
         case 1:
-            netparamsAtt['decom_space'] = output_size//2
-            netparamsAtt['ATTENTION_BRANCHES'] = 4
+            netparamsAtt['decom_space'] = 128
+            netparamsAtt['ATTENTION_BRANCHES'] = 10
 
         case 2:
-            netparamsAtt['decom_space'] = output_size//4
-            netparamsAtt['ATTENTION_BRANCHES'] = 8
+            netparamsAtt['decom_space'] = 500
+            netparamsAtt['ATTENTION_BRANCHES'] = 10
             netparamsNN
 
         case 3:
             netparamsAtt['decom_space'] = output_size
             netparamsAtt['ATTENTION_BRANCHES'] = 1
-    netparamsNN['in_features'] = netparamsAtt['in_features']
+    netparamsNN['in_features'] = netparamsAtt['in_features']*netparamsAtt['ATTENTION_BRANCHES']
     netparamsNN['out_features'] = 2
 
     return netparamsAtt, netparamsNN
