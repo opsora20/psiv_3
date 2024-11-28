@@ -18,6 +18,8 @@ from load_datasets import load_cropped_patients, load_annotated_patients, load_p
 import os
 from skimage import io, color
 
+import cv2
+
 target_height, target_width = 256, 256
 
 
@@ -92,6 +94,8 @@ class AutoEncoderDataset(Dataset):
             canvas[y_offset:y_offset+original_height,
                    x_offset:x_offset+original_width] = image
             image = canvas
+
+        image = cv2.resize(image, (28, 28), interpolation=cv2.INTER_AREA)
 
         image = image.transpose(2, 0, 1)
         return image
@@ -271,14 +275,15 @@ class PatientDataset(Dataset):
 
     def load_patient(self, patient, max_images):
         self._patient = patient
-        self.__images = load_patient_images(patient, self.__dataset_root_directory, max_images)
-        if(len(self.__images) == 0):
+        self.__images = load_patient_images(
+            patient, self.__dataset_root_directory, max_images)
+        if (len(self.__images) == 0):
             return False
         return True
-    
+
     def __len__(self):
         return len(self.__images)
-    
+
     def __getitem__(self, idx):
         if torch.is_tensor(idx):
             idx = idx.tolist()
@@ -291,7 +296,7 @@ class PatientDataset(Dataset):
         image_sample = image_sample.astype(np.float32)
 
         return torch.from_numpy(image_sample)
-    
+
     @property
     def images(self):
         """Getter para el atributo 'images'."""
