@@ -12,6 +12,7 @@ import pandas as pd
 
 from skimage import io, color
 from utils import echo
+import cv2
 
 import cv2
 
@@ -52,6 +53,7 @@ def load_cropped_patients(path_root_directory: str, info: pd.DataFrame):
                     if (image.shape[0] != 256 or image.shape[1] != 256):
                         echo(f'- {image_file}: {image.shape}')
                     else:
+                        image = cv2.resize(image, (28,28), interpolation=cv2.INTER_AREA)
                         # echo(f'+ {file_img}')
                         image = cv2.resize(
                             image, (28, 28), interpolation=cv2.INTER_AREA)
@@ -78,6 +80,7 @@ def load_patient_images(patient, root_dir, maximages=1000):
                         echo(f'- {image_file}: {image.shape}')
                     else:
                         # echo(f'+ {file_img}')
+                        image = cv2.resize(image, (28,28), interpolation=cv2.INTER_AREA)
                         image = image.transpose(2, 0, 1)
                         patches.append(image)
                 if (len(patches) >= maximages):
@@ -125,6 +128,7 @@ def load_annotated_patients(path_root_directory, info: pd.DataFrame):
                     echo(f"Tamaño incorrecto para {file_path}: {image.shape}")
                     continue
                 else:
+                    image = cv2.resize(image, (28,28), interpolation=cv2.INTER_AREA)
                     image = image.transpose(2, 0, 1)
                     patches.append(image)
                     patient_list.append(row["Pat_ID"])

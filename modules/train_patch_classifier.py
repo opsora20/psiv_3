@@ -35,6 +35,8 @@ def kfold_classifier(model: PatchClassifier, dataset: PatchClassifierDataset, de
     train_patient_metrics = []
     test_patient_metrics = []
     
+    roc_curves_patches = []
+    roc_curves_patients = []
     print("CONFIG: "+config+"\n\n")
     
     for fold, (train_index, test_index) in enumerate(sgkf.split(patches, labels, patients)):
@@ -54,6 +56,11 @@ def kfold_classifier(model: PatchClassifier, dataset: PatchClassifierDataset, de
         fred_list = fred_list.astype(np.float64).clip(min=np.finfo(np.float64).min, max=np.finfo(np.float64).max)
 
         best_threshold_patch, train_patch_fpr, train_patch_tpr = compute_train_roc(fred_list, labels_train, str(fold)+"_patch", config, show_roc_patch)
+        fpr, tpr, thr = roc_curve(labels_train, fred_list)
+        roc_auc = auc(fpr, tpr)
+        roc_curves_patches.append((fpr, tpr, roc_auc))
+        
+        
         print("Threshold",best_threshold_patch, "FPR", train_patch_fpr, "TPR", train_patch_tpr)
         model.threshold = best_threshold_patch
         predicted_labels = compute_patches(model, device, patches_test, batch_size, show_fred, test=True)
@@ -79,6 +86,9 @@ def kfold_classifier(model: PatchClassifier, dataset: PatchClassifierDataset, de
         proportions_train = list(df_train['PROPORTION'])
         
         best_threshold_patient, train_patient_fpr, train_patient_tpr = compute_train_roc(proportions_train, densitats_train, str(fold)+"_patient", config, show_roc_patient)
+        fpr, tpr, thr = roc_curve(densitats_train, proportions_train)
+        roc_auc = auc(fpr, tpr)
+        roc_curves_patients.append((fpr, tpr, roc_auc))
         
         """TEST"""
         df_test = df_filtrado[df_filtrado['CODI'].isin(patients_test)]
@@ -90,6 +100,8 @@ def kfold_classifier(model: PatchClassifier, dataset: PatchClassifierDataset, de
         train_patient_metrics.append((best_threshold_patient, train_patient_fpr, train_patient_tpr))
         test_patient_metrics.append((test_patient_acc, test_patient_fpr, test_patient_tpr))       
     plot_all(train_patch_metrics, test_patch_metrics, train_patient_metrics, test_patient_metrics, config)
+    plot_roc_curves(roc_curves_patches)
+    plot_roc_curves(roc_curves_patients)
 
     return train_patch_metrics, test_patch_metrics, train_patient_metrics, test_patient_metrics
 
@@ -229,23 +241,22 @@ def dist_thr(false_positive_rate: float, true_positive_rate: float) -> float:
     return dist
 
 
-def mean_kfold(metrics: list[tuple[float]]) -> tuple[float, float, float]:
+def mean_kfold(metrics: list[tuple[float]]) -> list[tuple[float, float]]:
     metric_1, metric_2, metric_3 = zip(*metrics)
-    
-    k = len(metric_1)
-    mean_1 = 0
-    mean_2 = 0
-    mean_3 = 0
-    for m1, m2, m3 in zip(metric_1, metric_2, metric_3):
-        mean_1 += m1
-        mean_2 += m2
-        mean_3 += m3
-    mean_1 /= k
-    mean_2 /= k
-    mean_3 /= k
-    
-    return mean_1, mean_2, mean_3
+    metrics = [metric_1, metric_2, metric_3]
+    metrics_stats = []
+    for metric in metrics:
+        print(metric)
+        media = sum(metric) / len(metric)
 
+        # Varianza
+        varianza = sum((x - media) ** 2 for x in metric) / len(metric)
+
+        # Desviación estándar poblacional
+        desviacion = varianza ** 0.5
+        metrics_stats.append((media, desviacion))
+    return metrics_stats
+    
 
 def kfold_boxplot(metrics: list[tuple[float]], title_1: str, file_name: str, config: str):
     metric_1, metric_2, metric_3 = zip(*metrics)
@@ -267,3 +278,16 @@ def kfold_boxplot(metrics: list[tuple[float]], title_1: str, file_name: str, con
 
     plt.savefig(file_name+"_config_"+config+'.png')
     
+    
+def plot_roc_curves(roc_curves):
+    plt.figure(figsize=(10, 8))
+    for i, (fpr, tpr, roc_auc) in enumerate(roc_curves):
+        plt.plot(fpr, tpr, label=f'Fold {i+1} (AUC = {roc_auc:.2f})')
+    plt.plot([0, 1], [0, 1], linestyle='--', color='gray', label='Random Guess')
+    plt.xlabel('False Positive Rate')
+    plt.ylabel('True Positive Rate')
+    plt.title('ROC Curves Across K-Folds')
+    plt.legend(loc='lower right')
+    plt.grid(alpha=0.6, linestyle='--')
+    plt.savefig("kfold_roc_curves.png")  # Opcional: guardar la figura
+    plt.show()
