@@ -16,8 +16,6 @@ from datasets import create_dataloaders
 import os
 
 
-DIRECTORY_SAVE_MODELS = "../models"
-
 
 def train_autoencoder(
         model,
@@ -26,7 +24,9 @@ def train_autoencoder(
         loader,
         optimizer,
         num_epochs,
-        precission: float = 0.001
+        config,
+        DIRECTORY_SAVE_MODELS,
+        precission: float = 0.001,
 ):
     """
     Train autoencoder.
@@ -73,7 +73,7 @@ def train_autoencoder(
             device,
             loader,
             optimizer,
-            loss_log
+            loss_log,
         )
 
         epoch_time = time.time() - t0
@@ -87,7 +87,7 @@ def train_autoencoder(
             model.state_dict(),
             os.path.join(
                 DIRECTORY_SAVE_MODELS,
-                "modelo_config" + '3' + 'epoch'+str(epoch)+".pth",
+                "modelo_config_" + config + '_epoch_'+str(epoch)+".pth",
             ),
         )
 
@@ -95,7 +95,7 @@ def train_autoencoder(
 
     echo('Best val Loss: {:4f} at epoch {}'.format(best_loss, best_epoch))
     model.load_state_dict(best_model_wts)
-    return model
+    return model, loss_log
 
 
 def __train_epoch(
@@ -127,7 +127,7 @@ def __train_epoch(
                     optimizer.step()
                     optimizer.zero_grad()
 
-            running_loss += loss
+            running_loss += loss.item()
 
         epoch_loss = running_loss/len(loader[phase])
 
