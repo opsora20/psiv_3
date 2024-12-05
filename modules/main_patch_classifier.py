@@ -119,7 +119,7 @@ def main():
         df_filtrado = df_patient_diagnosis[df_patient_diagnosis['CODI'].isin(diccionario_filtrado.keys())]
         
         train_patch_metrics, test_patch_metrics, train_patient_metrics, test_patient_metrics = kfold_classifier(model, dataset_annotated, device, df_filtrado, patients_fred_dict, BATCH_SIZE, FOLDS, CONFIG[number],
-                            show_fred=False, show_roc_patch=True, show_roc_patient=True)
+                            show_fred=True, show_roc_patch=True, show_roc_patient=True)
         patch_stats = mean_kfold(test_patch_metrics)
         patient_stats = mean_kfold(test_patient_metrics)
         print("PATCH_STATS",patch_stats)
